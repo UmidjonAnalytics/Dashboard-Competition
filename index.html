@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Competition 2026</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
+        input[type="range"]::-webkit-slider-thumb { border-radius: 50%; height: 20px; width: 20px; background: #3b82f6; cursor: pointer; -webkit-appearance: none; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen pb-20">
+
+    <header class="p-6 text-center border-b border-slate-800 glass sticky top-0 z-50">
+        <h1 class="text-2xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+            DASHBOARD CHALLENGE 2026
+        </h1>
+        <p id="user-welcome" class="text-xs text-slate-500 mt-1 uppercase tracking-widest">Verifying Student Access...</p>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4">
+
+        <section id="admin-panel" class="hidden mb-10 p-6 rounded-2xl border-2 border-dashed border-blue-500/50 bg-blue-500/5">
+            <h2 class="text-blue-400 font-bold mb-4 flex items-center gap-2">
+                <span>🛠 Admin Control Panel</span>
+            </h2>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="new-entry-id" placeholder="Entry ID (e.g. #101)" class="bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" id="new-title" placeholder="Student Name/Title" class="bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <input type="url" id="new-pbi-link" placeholder="Power BI Service URL" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="flex items-center gap-4 bg-slate-800 p-3 rounded-xl border border-slate-700">
+                    <label class="text-sm text-slate-400">Screenshot:</label>
+                    <input type="file" id="new-file" accept="image/*" class="text-xs">
+                </div>
+                <button onclick="uploadEntry()" id="upload-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20">
+                    🚀 PUBLISH TO GALLERY
+                </button>
+            </div>
+        </section>
+
+        <div id="gallery-loading" class="text-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-4 text-slate-500 italic">Fetching the latest dashboards...</p>
+        </div>
+        
+        <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            </div>
+
+    </main>
+
+    <script>
+        // --- CONFIGURATION ---
+        const ADMIN_ID = 8408175512; // 👈 REPLACE WITH YOUR TELEGRAM ID
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbymdi-jTPzQ76qwRxkNYyv_NmjzDEKdAaHkVSW2_douWi7TaUhhHNw5HLUf_NML3plw/exec'; // 👈 REPLACE WITH YOUR GOOGLE WEB APP URL
+        
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+
+        const user = tg.initDataUnsafe.user;
+        const userId = user ? user.id : null;
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (user) {
+                document.getElementById('user-welcome').innerText = `Voter ID: ${user.first_name} (${userId})`;
+                if (userId === ADMIN_ID) {
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                }
+            }
+            loadGallery();
+        });
+
+        // --- FETCH DATA FROM GOOGLE SHEET ---
+        async function loadGallery() {
+            try {
+                const response = await fetch(WEB_APP_URL);
+                const entries = await response.json();
+                renderGallery(entries);
+            } catch (err) {
+                console.error("Load failed", err);
+                document.getElementById('gallery-loading').innerHTML = "⚠️ Failed to load data. Ensure GAS is deployed to 'Anyone'.";
+            }
+        }
+
+        function renderGallery(entries) {
+            const container = document.getElementById('gallery');
+            const loader = document.getElementById('gallery-loading');
+            container.innerHTML = '';
+            loader.classList.add('hidden');
+
+            entries.forEach(item => {
+                const card = `
+                <div class="bg-slate-800/50 rounded-2xl border border-slate-700 overflow-hidden hover:border-blue-500/50 transition-all group">
+                    <div class="relative">
+                        <img src="${item.fileUrl}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-2 left-2 bg-blue-600 text-xs font-bold px-2 py-1 rounded shadow-lg">
+                            ${item.entryId}
+                        </div>
+                    </div>
+                    
+                    <div class="p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-white uppercase tracking-tight">${item.title}</h3>
+                            <a href="${item.pbiLink}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 font-medium bg-blue-400/10 px-2 py-1 rounded">
+                                LIVE DEMO ↗
+                            </a>
+                        </div>
+
+                        <div class="space-y-4 bg-slate-900/50 p-4 rounded-xl mb-4 border border-slate-700/50">
+                            <div>
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
+                                    <span>Visual Design</span>
+                                    <span id="v-val-${item.entryId}">5/10</span>
+                                </div>
+                                <input type="range" min="1" max="10" value="5" oninput="document.getElementById('v-val-${item.entryId}').innerText = this.value + '/10'" id="v-${item.entryId}" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
+                                    <span>DAX & Insights</span>
+                                    <span id="t-val-${item.entryId}">5/10</span>
+                                </div>
+                                <input type="range" min="1" max="10" value="5" oninput="document.getElementById('t-val-${item.entryId}').innerText = this.value + '/10'" id="t-${item.entryId}" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                        </div>
+
+                        <button onclick="submitVote('${item.entryId}')" class="w-full bg-slate-700 hover:bg-blue-600 text-white text-sm font-bold py-2.5 rounded-lg transition-colors border border-slate-600 hover:border-blue-500">
+                            CAST VOTE
+                        </button>
+                    </div>
+                </div>`;
+                container.innerHTML += card;
+            });
+        }
+
+        // --- ADMIN UPLOAD LOGIC ---
+        async function uploadEntry() {
+            const btn = document.getElementById('upload-btn');
+            const fileInput = document.getElementById('new-file');
+            if (!fileInput.files[0]) return alert("Select a screenshot!");
+
+            btn.innerText = "⏳ UPLOADING...";
+            btn.disabled = true;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(fileInput.files[0]);
+            reader.onload = async () => {
+                const payload = {
+                    action: 'upload',
+                    entryId: document.getElementById('new-entry-id').value,
+                    title: document.getElementById('new-title').value,
+                    pbiLink: document.getElementById('new-pbi-link').value,
+                    file: reader.result,
+                    fileName: `dash_${Date.now()}.png`
+                };
+
+                const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert("Published!");
+                    location.reload();
+                }
+            };
+        }
+
+        // --- VOTING LOGIC ---
+        async function submitVote(id) {
+            if (!userId) return tg.showAlert("Please open this app from Telegram!");
+            
+            const designScore = document.getElementById(`v-${id}`).value;
+            const techScore = document.getElementById(`t-${id}`).value;
+
+            tg.showConfirm(`Submit scores for ${id}? (Design: ${designScore}, Tech: ${techScore})`, async (ok) => {
+                if (ok) {
+                    const voteData = {
+                        action: 'vote',
+                        voterId: userId,
+                        entryId: id,
+                        design: designScore,
+                        tech: techScore
+                    };
+
+                    const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(voteData) });
+                    const res = await response.json();
+                    
+                    if (res.status === 'duplicate') {
+                        tg.showAlert("🚫 You have already voted!");
+                    } else {
+                        tg.showAlert("✅ Vote Success! Your ID has been verified.");
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
