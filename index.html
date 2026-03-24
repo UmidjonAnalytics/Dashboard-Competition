@@ -1,199 +1,236 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Competition 2026</title>
+    <title>Umidjon Analytics - Dashboard Musobaqasi</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
-        input[type="range"]::-webkit-slider-thumb { border-radius: 50%; height: 20px; width: 20px; background: #3b82f6; cursor: pointer; -webkit-appearance: none; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .star-active { background-color: #3b82f6 !important; color: white !important; }
+        .category-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
     </style>
 </head>
-<body class="bg-[#0f172a] text-slate-200 min-h-screen pb-20">
+<body class="bg-[#0f172a] text-slate-200 min-h-screen">
 
-    <header class="p-6 text-center border-b border-slate-800 glass sticky top-0 z-50">
-        <h1 class="text-2xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            DASHBOARD CHALLENGE 2026
+    <header class="p-6 text-center glass sticky top-0 z-50">
+        <h1 id="main-title" class="text-xl font-black bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent uppercase">
+            Dashboard Musobaqasi 2026
         </h1>
-        <p id="user-welcome" class="text-xs text-slate-500 mt-1 uppercase tracking-widest">Verifying Student Access...</p>
+        <div id="back-btn" onclick="showHome()" class="hidden absolute left-4 top-7 text-blue-400 font-bold cursor-pointer">
+            ← Orqaga
+        </div>
     </header>
 
-    <main class="max-w-4xl mx-auto p-4">
+    <main class="p-4 max-w-2xl mx-auto">
 
-        <section id="admin-panel" class="hidden mb-10 p-6 rounded-2xl border-2 border-dashed border-blue-500/50 bg-blue-500/5">
-            <h2 class="text-blue-400 font-bold mb-4 flex items-center gap-2">
-                <span>🛠 Admin Control Panel</span>
-            </h2>
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="new-entry-id" placeholder="Entry ID (e.g. #101)" class="bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                    <input type="text" id="new-title" placeholder="Student Name/Title" class="bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <input type="url" id="new-pbi-link" placeholder="Power BI Service URL" class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                <div class="flex items-center gap-4 bg-slate-800 p-3 rounded-xl border border-slate-700">
-                    <label class="text-sm text-slate-400">Screenshot:</label>
-                    <input type="file" id="new-file" accept="image/*" class="text-xs">
-                </div>
-                <button onclick="uploadEntry()" id="upload-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20">
-                    🚀 PUBLISH TO GALLERY
+        <div id="home-view" class="space-y-6">
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <button onclick="showGallery('Excel')" class="category-card bg-gradient-to-br from-green-600 to-green-800 p-8 rounded-3xl shadow-xl text-center">
+                    <div class="text-4xl mb-2">📊</div>
+                    <div class="font-bold text-lg">EXCEL</div>
+                </button>
+                <button onclick="showGallery('PowerBI')" class="category-card bg-gradient-to-br from-yellow-500 to-yellow-700 p-8 rounded-3xl shadow-xl text-center">
+                    <div class="text-4xl mb-2">⚡</div>
+                    <div class="font-bold text-lg">POWER BI</div>
                 </button>
             </div>
-        </section>
 
-        <div id="gallery-loading" class="text-center py-20">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            <p class="mt-4 text-slate-500 italic">Fetching the latest dashboards...</p>
+            <section class="mt-10">
+                <h2 class="text-center text-slate-400 text-sm font-bold tracking-widest uppercase mb-4">🏆 Jonli Natijalar (Top 3)</h2>
+                <div id="leaderboard" class="space-y-3">
+                    <div class="text-center text-slate-500 italic py-4">Yuklanmoqda...</div>
+                </div>
+            </section>
+
+            <section id="admin-panel" class="hidden mt-10 p-6 rounded-2xl border-2 border-dashed border-blue-500/30 bg-blue-500/5">
+                <h2 class="text-blue-400 font-bold mb-4">🛠 Admin: Dashboard Qo'shish</h2>
+                <div class="space-y-3">
+                    <select id="new-category" class="w-full bg-slate-800 p-3 rounded-xl">
+                        <option value="Excel">Excel</option>
+                        <option value="PowerBI">Power BI</option>
+                    </select>
+                    <input type="text" id="new-id" placeholder="Dashboard ID (masalan: #001)" class="w-full bg-slate-800 p-3 rounded-xl outline-none">
+                    <input type="url" id="new-pbi" placeholder="Power BI Service Link (ixtiyoriy)" class="w-full bg-slate-800 p-3 rounded-xl outline-none">
+                    <input type="file" id="new-file" accept="image/*" class="w-full text-sm text-slate-400 bg-slate-800 p-3 rounded-xl">
+                    <button onclick="uploadEntry()" id="upload-btn" class="w-full bg-blue-600 py-3 rounded-xl font-bold">PUBLISH</button>
+                </div>
+            </section>
         </div>
-        
-        <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            </div>
+
+        <div id="gallery-view" class="hidden space-y-8 pb-20">
+            <h2 id="category-title" class="text-2xl font-bold text-center text-blue-400"></h2>
+            <div id="gallery-container" class="space-y-10">
+                </div>
+        </div>
 
     </main>
 
     <script>
         // --- CONFIGURATION ---
-        const ADMIN_ID = 8408175512; // 👈 REPLACE WITH YOUR TELEGRAM ID
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbymdi-jTPzQ76qwRxkNYyv_NmjzDEKdAaHkVSW2_douWi7TaUhhHNw5HLUf_NML3plw/exec'; // 👈 REPLACE WITH YOUR GOOGLE WEB APP URL
+        const ADMIN_ID = 8408175512; 
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbymdi-jTPzQ76qwRxkNYyv_NmjzDEKdAaHkVSW2_douWi7TaUhhHNw5HLUf_NML3plw/exec'; 
         
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.enableClosingConfirmation();
+        const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null;
 
-        const user = tg.initDataUnsafe.user;
-        const userId = user ? user.id : null;
+        let allEntries = [];
 
-        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
-            if (user) {
-                document.getElementById('user-welcome').innerText = `Voter ID: ${user.first_name} (${userId})`;
-                if (userId === ADMIN_ID) {
-                    document.getElementById('admin-panel').classList.remove('hidden');
-                }
-            }
-            loadGallery();
+            if (userId === ADMIN_ID) document.getElementById('admin-panel').classList.remove('hidden');
+            fetchData();
         });
 
-        // --- FETCH DATA FROM GOOGLE SHEET ---
-        async function loadGallery() {
+        async function fetchData() {
             try {
-                const response = await fetch(WEB_APP_URL);
-                const entries = await response.json();
-                renderGallery(entries);
-            } catch (err) {
-                console.error("Load failed", err);
-                document.getElementById('gallery-loading').innerHTML = "⚠️ Failed to load data. Ensure GAS is deployed to 'Anyone'.";
-            }
+                const res = await fetch(WEB_APP_URL);
+                allEntries = await res.json();
+                renderLeaderboard();
+            } catch (e) { console.error("Xato:", e); }
         }
 
-        function renderGallery(entries) {
-            const container = document.getElementById('gallery');
-            const loader = document.getElementById('gallery-loading');
-            container.innerHTML = '';
-            loader.classList.add('hidden');
+        function showHome() {
+            document.getElementById('home-view').classList.remove('hidden');
+            document.getElementById('gallery-view').classList.add('hidden');
+            document.getElementById('back-btn').classList.add('hidden');
+            document.getElementById('main-title').innerText = "Dashboard Musobaqasi 2026";
+            fetchData(); // Refresh results
+        }
 
+        function showGallery(cat) {
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('gallery-view').classList.remove('hidden');
+            document.getElementById('back-btn').classList.remove('hidden');
+            document.getElementById('category-title').innerText = cat + " Yo'nalishi";
+            
+            const filtered = allEntries.filter(e => e.category === cat);
+            renderGallery(filtered, cat);
+        }
+
+        function renderGallery(entries, cat) {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = entries.length ? '' : '<p class="text-center text-slate-500">Hozircha dashbordlar yo\'q.</p>';
+            
             entries.forEach(item => {
-                const card = `
-                <div class="bg-slate-800/50 rounded-2xl border border-slate-700 overflow-hidden hover:border-blue-500/50 transition-all group">
-                    <div class="relative">
-                        <img src="${item.fileUrl}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
-                        <div class="absolute top-2 left-2 bg-blue-600 text-xs font-bold px-2 py-1 rounded shadow-lg">
-                            ${item.entryId}
-                        </div>
+                let daxQuestion = cat === 'PowerBI' ? `
+                    <div class="space-y-2">
+                        <p class="text-sm text-slate-300">Power BI DAX dan qo'llanish darajasini qanday baholaysiz? (ochmasangiz 10 ball qo'ying)</p>
+                        ${renderStars(item.entryId, 'q4')}
                     </div>
-                    
-                    <div class="p-5">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold text-white uppercase tracking-tight">${item.title}</h3>
-                            <a href="${item.pbiLink}" target="_blank" class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 font-medium bg-blue-400/10 px-2 py-1 rounded">
-                                LIVE DEMO ↗
-                            </a>
+                ` : '';
+
+                container.innerHTML += `
+                <div class="bg-slate-800 rounded-3xl overflow-hidden border border-slate-700 shadow-2xl">
+                    <img src="${item.fileUrl}" class="w-full h-auto border-b border-slate-700">
+                    <div class="p-6 space-y-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-black text-blue-400">#${item.entryId}</span>
+                            ${item.pbiLink ? `<a href="${item.pbiLink}" target="_blank" class="bg-blue-600/20 text-blue-400 px-4 py-1 rounded-full text-xs font-bold">LINK ↗</a>` : ''}
                         </div>
 
-                        <div class="space-y-4 bg-slate-900/50 p-4 rounded-xl mb-4 border border-slate-700/50">
-                            <div>
-                                <div class="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
-                                    <span>Visual Design</span>
-                                    <span id="v-val-${item.entryId}">5/10</span>
-                                </div>
-                                <input type="range" min="1" max="10" value="5" oninput="document.getElementById('v-val-${item.entryId}').innerText = this.value + '/10'" id="v-${item.entryId}" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <p class="text-sm text-slate-300">Dashboard dizayniga (chartlar, ranglar, shakllar, textlar) qanday baho berasiz?</p>
+                                ${renderStars(item.entryId, 'q1')}
                             </div>
-                            <div>
-                                <div class="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-1">
-                                    <span>DAX & Insights</span>
-                                    <span id="t-val-${item.entryId}">5/10</span>
-                                </div>
-                                <input type="range" min="1" max="10" value="5" oninput="document.getElementById('t-val-${item.entryId}').innerText = this.value + '/10'" id="t-${item.entryId}" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <div class="space-y-2">
+                                <p class="text-sm text-slate-300">Dashboard ortiqcha so'zlarsiz tushunarliligiga qanday baho berasiz?</p>
+                                ${renderStars(item.entryId, 'q2')}
                             </div>
+                            <div class="space-y-2">
+                                <p class="text-sm text-slate-300">Dashboarddagi ma'lumotlari biznes uchun qaror chiqarishga qanchalik muhim deb o'ylaysiz?</p>
+                                ${renderStars(item.entryId, 'q3')}
+                            </div>
+                            ${daxQuestion}
                         </div>
 
-                        <button onclick="submitVote('${item.entryId}')" class="w-full bg-slate-700 hover:bg-blue-600 text-white text-sm font-bold py-2.5 rounded-lg transition-colors border border-slate-600 hover:border-blue-500">
-                            CAST VOTE
-                        </button>
+                        <button onclick="submitDetailedVote('${item.entryId}', '${cat}')" class="w-full bg-blue-600 py-4 rounded-2xl font-black shadow-lg shadow-blue-500/20">OVOZ BERISH</button>
                     </div>
                 </div>`;
-                container.innerHTML += card;
             });
         }
 
-        // --- ADMIN UPLOAD LOGIC ---
+        function renderStars(entryId, questionKey) {
+            let stars = `<div class="flex flex-wrap gap-1" id="stars-${entryId}-${questionKey}">`;
+            for (let i = 1; i <= 10; i++) {
+                stars += `<button onclick="selectStar('${entryId}', '${questionKey}', ${i})" class="w-8 h-8 rounded-lg bg-slate-700 text-[10px] font-bold transition-all border border-slate-600">${i}</button>`;
+            }
+            stars += `</div><input type="hidden" id="val-${entryId}-${questionKey}" value="0">`;
+            return stars;
+        }
+
+        function selectStar(entryId, qKey, val) {
+            const container = document.getElementById(`stars-${entryId}-${qKey}`);
+            const buttons = container.getElementsByTagName('button');
+            for (let btn of buttons) {
+                btn.classList.remove('star-active');
+                if (parseInt(btn.innerText) === val) btn.classList.add('star-active');
+            }
+            document.getElementById(`val-${entryId}-${qKey}`).value = val;
+        }
+
+        async function submitDetailedVote(id, cat) {
+            if (!userId) return tg.showAlert("Faqat Telegram orqali ovoz berish mumkin!");
+            
+            const q1 = document.getElementById(`val-${id}-q1`).value;
+            const q2 = document.getElementById(`val-${id}-q2`).value;
+            const q3 = document.getElementById(`val-${id}-q3`).value;
+            const q4 = cat === 'PowerBI' ? document.getElementById(`val-${id}-q4`).value : 0;
+
+            if (q1 == 0 || q2 == 0 || q3 == 0 || (cat === 'PowerBI' && q4 == 0)) {
+                return tg.showAlert("Iltimos, barcha savollarga baho bering!");
+            }
+
+            tg.showConfirm(`Dashboard #${id} ga ovoz berasizmi?`, async (ok) => {
+                if (ok) {
+                    const payload = { action: 'vote', voterId: userId, entryId: id, q1, q2, q3, q4, category: cat };
+                    const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+                    const result = await res.json();
+                    
+                    if (result.status === 'duplicate') tg.showAlert("Siz ushbu musobaqada ovoz berib bo'lgansiz!");
+                    else tg.showAlert("Rahmat! Ovozingiz qabul qilindi.");
+                }
+            });
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard');
+            // Mock-up analysis (In real life, your GAS should provide averages)
+            // Here we just show entries
+            container.innerHTML = allEntries.slice(0, 3).map((item, index) => `
+                <div class="flex items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <span class="text-2xl font-black text-blue-500">#${index + 1}</span>
+                    <div class="flex-1">
+                        <p class="font-bold">Dashboard #${item.entryId}</p>
+                        <p class="text-[10px] text-slate-500 uppercase">${item.category}</p>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-center text-slate-600">Natijalar tez kunda...</p>';
+        }
+
         async function uploadEntry() {
             const btn = document.getElementById('upload-btn');
-            const fileInput = document.getElementById('new-file');
-            if (!fileInput.files[0]) return alert("Select a screenshot!");
+            const file = document.getElementById('new-file').files[0];
+            if (!file) return alert("Rasm tanlang!");
 
-            btn.innerText = "⏳ UPLOADING...";
-            btn.disabled = true;
-
+            btn.innerText = "YUKLANMOQDA...";
             const reader = new FileReader();
-            reader.readAsDataURL(fileInput.files[0]);
+            reader.readAsDataURL(file);
             reader.onload = async () => {
                 const payload = {
                     action: 'upload',
-                    entryId: document.getElementById('new-entry-id').value,
-                    title: document.getElementById('new-title').value,
-                    pbiLink: document.getElementById('new-pbi-link').value,
+                    category: document.getElementById('new-category').value,
+                    entryId: document.getElementById('new-id').value,
+                    pbiLink: document.getElementById('new-pbi').value,
                     file: reader.result,
                     fileName: `dash_${Date.now()}.png`
                 };
-
-                const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    alert("Published!");
-                    location.reload();
-                }
+                await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
+                alert("Muvaffaqiyatli yuklandi!");
+                location.reload();
             };
-        }
-
-        // --- VOTING LOGIC ---
-        async function submitVote(id) {
-            if (!userId) return tg.showAlert("Please open this app from Telegram!");
-            
-            const designScore = document.getElementById(`v-${id}`).value;
-            const techScore = document.getElementById(`t-${id}`).value;
-
-            tg.showConfirm(`Submit scores for ${id}? (Design: ${designScore}, Tech: ${techScore})`, async (ok) => {
-                if (ok) {
-                    const voteData = {
-                        action: 'vote',
-                        voterId: userId,
-                        entryId: id,
-                        design: designScore,
-                        tech: techScore
-                    };
-
-                    const response = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(voteData) });
-                    const res = await response.json();
-                    
-                    if (res.status === 'duplicate') {
-                        tg.showAlert("🚫 You have already voted!");
-                    } else {
-                        tg.showAlert("✅ Vote Success! Your ID has been verified.");
-                    }
-                }
-            });
         }
     </script>
 </body>
