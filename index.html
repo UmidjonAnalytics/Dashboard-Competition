@@ -86,21 +86,32 @@
 
     <div id="lightbox" class="hidden fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center select-none" onclick="if(event.target.id === 'lightbox') closeLightbox()">
         <button onclick="closeLightbox()" class="absolute top-6 right-8 text-white text-5xl font-light hover:text-red-500 transition z-50">&times;</button>
-        
         <button onclick="prevLightboxSlide()" class="absolute left-2 md:left-10 text-white text-4xl md:text-5xl bg-black/40 hover:bg-black/80 w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center transition z-50 pb-1">❮</button>
-        
         <img id="lightbox-img" src="" class="max-w-[90%] max-h-[90vh] object-contain rounded-xl shadow-2xl transition-transform duration-300">
-        
         <button onclick="nextLightboxSlide()" class="absolute right-2 md:right-10 text-white text-4xl md:text-5xl bg-black/40 hover:bg-black/80 w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center transition z-50 pb-1">❯</button>
     </div>
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwtFqBKXEccC-UXlLGQ1sx1N3mN-sH6UMC0dL172SuuUVi8roeTmiNtmRW6_aHa8iUN/exec'; // 👈 YANGI URL SHU YERGA
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzCXL8Uke_T9OuJhAvKLeX25uI8Kb8Zk6pCWzsz5-rtfb_jLModz9RQrU6dtMXP-E5T/exec'; // 👈 URL SHU YERGA
         
         const tg = window.Telegram.WebApp;
         tg.expand();
-        let userId = (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : new URLSearchParams(window.location.search).get('id'));
+        
+        // FOYDALANUVCHI ISMI VA ID SINI OLISH
+        let userId = null;
+        let userName = 'Foydalanuvchi';
+        
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            userId = tg.initDataUnsafe.user.id;
+            const first = tg.initDataUnsafe.user.first_name || '';
+            const last = tg.initDataUnsafe.user.last_name || '';
+            userName = `${first} ${last}`.trim() || 'Foydalanuvchi';
+        } else {
+            userId = new URLSearchParams(window.location.search).get('id');
+            userName = 'Kuzatuvchi (Brauzer)';
+        }
+
         let allEntries = [];
         let leaderboardData = [];
         let myVotes = []; 
@@ -114,7 +125,7 @@
         const pbiIcon = `<svg class="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="4" width="6" height="16" rx="1" fill="#eab308"/><rect x="4" y="12" width="6" height="8" rx="1" fill="#ca8a04"/><rect x="9" y="8" width="6" height="12" rx="1" fill="#facc15"/></svg>`;
 
         document.addEventListener('DOMContentLoaded', () => {
-            if(userId) document.getElementById('user-display').innerText = `ID: ${userId}`;
+            if(userId) document.getElementById('user-display').innerText = `${userName} (${userId})`;
             if(parseInt(userId) === ADMIN_ID) document.getElementById('admin-panel').classList.remove('hidden');
             fetchData();
         });
@@ -179,7 +190,6 @@
             document.body.removeChild(a);
         }
 
-        // LIGHTBOX VA NAVIGATION LOGIKASI
         function openLightbox(eid) {
             activeLightboxEid = eid;
             updateLightboxImage();
@@ -207,7 +217,6 @@
             updateLightboxImage();
         }
 
-        // KICHIK OYNA SLIDERI
         function updateSlide(eid) {
             const imgElement = document.getElementById(`main-img-${eid}`);
             const images = window.entryImages[eid];
@@ -277,7 +286,7 @@
             entries.forEach(item => {
                 const scoreObj = leaderboardData.find(l => String(l.id) === String(item.entryid));
                 const avgScore = scoreObj ? parseFloat(scoreObj.avg) : 0;
-                const voteCount = scoreObj ? scoreObj.count : 0; // Ovozlar soni
+                const voteCount = scoreObj ? scoreObj.count : 0; 
                 
                 const myVote = myVotes.find(v => String(v.entryId) === String(item.entryid));
                 const isVoted = !!myVote;
@@ -338,10 +347,10 @@
                         </h4>
                         
                         <div class="space-y-6">
-                            ${qBox(item.entryid, 'q1', "Dizayn (chart, rang, shakl, matn)", myVote ? myVote.q1 : 0, isVoted)}
-                            ${qBox(item.entryid, 'q2', "Tushunarlilik (ortiqcha so'zlarsiz)", myVote ? myVote.q2 : 0, isVoted)}
-                            ${qBox(item.entryid, 'q3', "Biznes uchun qaror chiqarishga muhimligi", myVote ? myVote.q3 : 0, isVoted)}
-                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "Power BI DAX dan qo'llanish darajasi", myVote ? myVote.q4 : 0, isVoted) : ''}
+                            ${qBox(item.entryid, 'q1', "Dashboard dizayniga (chartlar, ranglar, shakllar, textlar) qanday baho berasiz?", myVote ? myVote.q1 : 0, isVoted)}
+                            ${qBox(item.entryid, 'q2', "Dashboard ortiqcha so'zlarsiz tushunarliligiga qanday baho berasiz?", myVote ? myVote.q2 : 0, isVoted)}
+                            ${qBox(item.entryid, 'q3', "Dashboarddagi ma'lumotlari biznes uchun qaror chiqarishga qanchalik muhim deb o'ylaysiz?", myVote ? myVote.q3 : 0, isVoted)}
+                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "Power BI DAX dan qo'llanish darajasini qanday baholaysiz? (ochmasangiz 10 ball qo'ying)", myVote ? myVote.q4 : 0, isVoted) : ''}
                         </div>
 
                         <div class="space-y-2 mt-6">
@@ -359,7 +368,6 @@
             });
         }
 
-        // Shrifti kattalashtirilgan yulduzchalar bloki
         function qBox(id, qk, txt, myVal, isVoted) {
             let stars = `<div class="star-rating mt-2" id="stars-${id}-${qk}">`;
             for(let i=1; i<=10; i++) {
@@ -421,9 +429,13 @@
             if(q1==0||q2==0||q3==0 || (cat==='PowerBI' && q4==0)) return alert("Barcha yulduzchalarga baho bering!");
 
             if(confirm(`ID #${id} ga bergan ovozingizni tasdiqlaysizmi?`)) {
-                const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action:'vote', voterId:userId, entryId:id, q1, q2, q3, q4, advice, category:cat}) });
+                // ISMNI HAM YUBORAMIZ (voterName: userName)
+                const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action:'vote', voterId:userId, voterName:userName, entryId:id, q1, q2, q3, q4, advice, category:cat}) });
                 const result = await res.json();
-                if (result.status === 'duplicate') {
+                
+                if (result.status === 'not_whitelisted') {
+                    alert("Kechirasiz! Siz ovoz berish huquqiga ega emassiz (Oq ro'yxatda yo'qsiz).");
+                } else if (result.status === 'duplicate') {
                     alert("Siz ushbu dashboardga allaqachon ovoz bergansiz!");
                 } else {
                     alert("Rahmat! Ovozingiz qabul qilindi.");
