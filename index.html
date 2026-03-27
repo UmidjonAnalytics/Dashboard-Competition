@@ -16,7 +16,6 @@
         .custom-scroll::-webkit-scrollbar { height: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         
-        /* Modal Lightbox Animatsiyasi */
         #lightbox { transition: opacity 0.3s ease; }
         #lightbox.hidden { opacity: 0; pointer-events: none; }
         #lightbox:not(.hidden) { opacity: 1; pointer-events: auto; }
@@ -45,7 +44,10 @@
             </div>
 
             <section id="admin-panel" class="hidden max-w-2xl mx-auto p-8 rounded-[3rem] border-2 border-dashed border-blue-500/20 bg-blue-500/5 space-y-4">
-                <h3 class="text-blue-400 font-bold uppercase tracking-widest text-sm">🛠 Admin Upload</h3>
+                <h3 class="text-blue-400 font-bold uppercase tracking-widest text-sm flex justify-between">
+                    🛠 Admin Upload
+                    <span class="text-[10px] text-slate-400 normal-case tracking-normal">Izohlarni ko'rish uchun Sheets'dagi 'Votes' varag'iga kiring.</span>
+                </h3>
                 <div class="grid grid-cols-2 gap-4">
                     <select id="new-cat" class="bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm"><option value="Excel">Excel</option><option value="PowerBI">Power BI</option></select>
                     <input type="text" id="new-eid" placeholder="ID (ex: 001)" class="bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
@@ -82,14 +84,19 @@
         </div>
     </main>
 
-    <div id="lightbox" class="hidden fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center cursor-zoom-out" onclick="closeLightbox()">
-        <img id="lightbox-img" src="" class="max-w-[95%] max-h-[95%] object-contain rounded-xl shadow-2xl transition-transform duration-300">
-        <button class="absolute top-6 right-8 text-white text-5xl font-light hover:text-red-500 transition">&times;</button>
+    <div id="lightbox" class="hidden fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center select-none" onclick="if(event.target.id === 'lightbox') closeLightbox()">
+        <button onclick="closeLightbox()" class="absolute top-6 right-8 text-white text-5xl font-light hover:text-red-500 transition z-50">&times;</button>
+        
+        <button onclick="prevLightboxSlide()" class="absolute left-2 md:left-10 text-white text-4xl md:text-5xl bg-black/40 hover:bg-black/80 w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center transition z-50 pb-1">❮</button>
+        
+        <img id="lightbox-img" src="" class="max-w-[90%] max-h-[90vh] object-contain rounded-xl shadow-2xl transition-transform duration-300">
+        
+        <button onclick="nextLightboxSlide()" class="absolute right-2 md:right-10 text-white text-4xl md:text-5xl bg-black/40 hover:bg-black/80 w-14 h-14 md:w-20 md:h-20 rounded-full flex items-center justify-center transition z-50 pb-1">❯</button>
     </div>
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwsk6tu8cMnOdLzwjZF0g4S_2D20v0Zk4s1PqEHmsllS5P8m0wEIGXYbd_2hLUFQkGe/exec'; // 👈 URL SHU YERGA
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwtFqBKXEccC-UXlLGQ1sx1N3mN-sH6UMC0dL172SuuUVi8roeTmiNtmRW6_aHa8iUN/exec'; // 👈 YANGI URL SHU YERGA
         
         const tg = window.Telegram.WebApp;
         tg.expand();
@@ -99,11 +106,10 @@
         let myVotes = []; 
         let isDataLoaded = false;
         
-        // Slayder uchun global ob'yektlar
         window.entryImages = {};
         window.currentSlide = {};
+        let activeLightboxEid = null;
 
-        // Excel va PBI logolari (SVG formatida)
         const excelIcon = `<svg class="w-6 h-6 ml-1 mt-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" fill="#10b981"/><path d="M14 2V8H20" fill="#047857"/><path d="M9.5 16.5L12 13M12 13L14.5 9.5M12 13L9.5 9.5M12 13L14.5 16.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         const pbiIcon = `<svg class="w-6 h-6 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="4" width="6" height="16" rx="1" fill="#eab308"/><rect x="4" y="12" width="6" height="8" rx="1" fill="#ca8a04"/><rect x="9" y="8" width="6" height="12" rx="1" fill="#facc15"/></svg>`;
 
@@ -157,16 +163,13 @@
             return stars;
         }
 
-        // FAYL TORTISH UCHUN FUNKSIYA (Majburiy yuklash)
         function forceDownload(url) {
             if (!url) return;
-            // Google Drive URL ni to'g'ridan to'g'ri yuklashga majburlash
             let dlUrl = url;
             if (url.includes('/file/d/')) {
                 const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
                 if (match) dlUrl = `https://drive.google.com/uc?export=download&id=${match[1]}`;
             }
-            
             const a = document.createElement('a');
             a.href = dlUrl;
             a.target = '_blank';
@@ -176,17 +179,35 @@
             document.body.removeChild(a);
         }
 
-        // FULLSCREEN LIGHTBOX FUNKSIYALARI
-        function openLightbox(src) {
-            document.getElementById('lightbox-img').src = src;
+        // LIGHTBOX VA NAVIGATION LOGIKASI
+        function openLightbox(eid) {
+            activeLightboxEid = eid;
+            updateLightboxImage();
             document.getElementById('lightbox').classList.remove('hidden');
         }
         function closeLightbox() {
             document.getElementById('lightbox').classList.add('hidden');
+            activeLightboxEid = null;
             document.getElementById('lightbox-img').src = '';
         }
+        function updateLightboxImage() {
+            if (!activeLightboxEid) return;
+            const images = window.entryImages[activeLightboxEid];
+            const idx = window.currentSlide[activeLightboxEid];
+            document.getElementById('lightbox-img').src = images[idx];
+        }
+        function prevLightboxSlide() {
+            if (!activeLightboxEid) return;
+            prevSlide(activeLightboxEid);
+            updateLightboxImage();
+        }
+        function nextLightboxSlide() {
+            if (!activeLightboxEid) return;
+            nextSlide(activeLightboxEid);
+            updateLightboxImage();
+        }
 
-        // SLIDER (KARUSEL) FUNKSIYALARI
+        // KICHIK OYNA SLIDERI
         function updateSlide(eid) {
             const imgElement = document.getElementById(`main-img-${eid}`);
             const images = window.entryImages[eid];
@@ -213,6 +234,7 @@
             
             let filtered = allEntries.filter(e => e.category === cat);
             const scoredIds = myVotes.filter(v => v.category === cat).map(v => String(v.entryId));
+            
             let unscored = filtered.filter(item => !scoredIds.includes(String(item.entryid)));
             let scored = filtered.filter(item => scoredIds.includes(String(item.entryid)));
             
@@ -242,7 +264,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-bold text-white truncate">${s.id} - ${s.title}</div>
                         <div class="flex items-center gap-1 mt-0.5 text-sm tracking-widest">${getStarsHtml(s.avg)}</div>
-                        <div class="text-[10px] text-slate-400 font-mono mt-0.5">${s.avg}/10 &nbsp; ${qScores}</div>
+                        <div class="text-[10px] text-slate-400 font-mono mt-0.5">${s.avg}/10 &nbsp; ${qScores} &nbsp; • &nbsp; ${s.count} ta ovoz</div>
                     </div>
                 </div>`;
             }).join('') || '<p class="text-slate-500 text-xs italic">Natijalar tez kunda...</p>';
@@ -255,10 +277,11 @@
             entries.forEach(item => {
                 const scoreObj = leaderboardData.find(l => String(l.id) === String(item.entryid));
                 const avgScore = scoreObj ? parseFloat(scoreObj.avg) : 0;
+                const voteCount = scoreObj ? scoreObj.count : 0; // Ovozlar soni
+                
                 const myVote = myVotes.find(v => String(v.entryId) === String(item.entryid));
                 const isVoted = !!myVote;
 
-                // Rasmlarni bitta massivga yig'ish
                 const images = [item.fileurl, item.extra1, item.extra2, item.extra3, item.extra4].filter(Boolean);
                 window.entryImages[item.entryid] = images;
                 window.currentSlide[item.entryid] = 0;
@@ -266,9 +289,14 @@
                 const sliderControls = images.length > 1 ? `
                     <button onclick="prevSlide('${item.entryid}')" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition hover:bg-black/80">❮</button>
                     <button onclick="nextSlide('${item.entryid}')" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition hover:bg-black/80">❯</button>
-                    <div class="absolute top-2 right-2 bg-black/70 px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-widest">+${images.length - 1} ta rasm</div>
+                    <div class="absolute top-2 right-2 bg-black/70 px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-widest">+${images.length - 1} rasm</div>
                 ` : '';
 
+                let dlLink = item.excelurl;
+                if(dlLink && dlLink.includes('file/d/')) {
+                    const fileId = dlLink.split('file/d/')[1].split('/')[0];
+                    dlLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                }
                 const iconSvg = cat === 'Excel' ? excelIcon : pbiIcon;
 
                 container.innerHTML += `
@@ -277,21 +305,22 @@
                     <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col">
                         
                         <div class="relative w-full h-[300px] md:h-[450px] bg-slate-800 rounded-[2rem] overflow-hidden border border-slate-700 group flex items-center justify-center shadow-lg">
-                            <img id="main-img-${item.entryid}" src="${images[0]}" class="max-w-full max-h-full object-contain cursor-zoom-in transition duration-300 hover:scale-105" onclick="openLightbox(this.src)" loading="lazy">
+                            <img id="main-img-${item.entryid}" src="${images[0]}" class="max-w-full max-h-full object-contain cursor-zoom-in transition duration-300 hover:scale-[1.02]" onclick="openLightbox('${item.entryid}')" loading="lazy">
                             ${sliderControls}
                         </div>
 
-                        <div class="mt-4 flex items-center justify-between border-t border-slate-800 pt-6">
+                        <div class="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-slate-800 pt-6 gap-4">
                             <div class="min-w-0">
                                 <div class="inline-block ${isVoted ? 'bg-emerald-600' : 'bg-blue-600'} text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryid}</div>
                                 <h3 class="text-3xl font-black text-white italic leading-tight break-words">${item.title || 'Nomsiz Dashboard'}</h3>
                                 <div class="flex items-center gap-2 mt-3 text-2xl tracking-widest flex-wrap">
-                                    ${getStarsHtml(avgScore)} <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10 O'rtacha</span>
+                                    ${getStarsHtml(avgScore)} 
+                                    <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10 O'rtacha &nbsp;•&nbsp; ${voteCount} ta ovoz</span>
                                 </div>
                             </div>
                             
-                            ${item.excelurl ? `
-                            <button onclick="forceDownload('${item.excelurl}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 ml-4 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">
+                            ${dlLink ? `
+                            <button onclick="forceDownload('${dlLink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">
                                 ${iconSvg}
                             </button>
                             ` : ''}
@@ -299,7 +328,7 @@
 
                         <div class="bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 mt-4 grow">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">TAVSIF</h4>
-                            <p class="text-sm text-slate-300 leading-relaxed break-words whitespace-pre-wrap">${item.description || 'Tavsif berilmagan.'}</p>
+                            <p class="text-sm md:text-base text-slate-300 leading-relaxed break-words whitespace-pre-wrap">${item.description || 'Tavsif berilmagan.'}</p>
                         </div>
                     </div>
 
@@ -309,29 +338,30 @@
                         </h4>
                         
                         <div class="space-y-6">
-                            ${qBox(item.entryid, 'q1', "Dashboard dizayniga (chartlar, ranglar, shakllar, textlar) qanday baho berasiz?", myVote ? myVote.q1 : 0, isVoted)}
-                            ${qBox(item.entryid, 'q2', "Dashboard ortiqcha so'zlarsiz tushunarliligiga qanday baho berasiz?", myVote ? myVote.q2 : 0, isVoted)}
-                            ${qBox(item.entryid, 'q3', "Dashboarddagi ma'lumotlari biznes uchun qaror chiqarishga qanchalik muhim deb o'ylaysiz?", myVote ? myVote.q3 : 0, isVoted)}
-                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "Power BI DAX dan qo'llanish darajasini qanday baholaysiz? (ochmasangiz 10 ball qo'ying)", myVote ? myVote.q4 : 0, isVoted) : ''}
+                            ${qBox(item.entryid, 'q1', "Dizayn (chart, rang, shakl, matn)", myVote ? myVote.q1 : 0, isVoted)}
+                            ${qBox(item.entryid, 'q2', "Tushunarlilik (ortiqcha so'zlarsiz)", myVote ? myVote.q2 : 0, isVoted)}
+                            ${qBox(item.entryid, 'q3', "Biznes uchun qaror chiqarishga muhimligi", myVote ? myVote.q3 : 0, isVoted)}
+                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "Power BI DAX dan qo'llanish darajasi", myVote ? myVote.q4 : 0, isVoted) : ''}
                         </div>
 
                         <div class="space-y-2 mt-6">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">IZOH (IXTIYORIY)</h4>
-                            <textarea id="advice-${item.entryid}" class="w-full ${isVoted ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-900 text-slate-200'} border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-blue-500 transition resize-none" placeholder="Izoh (ixtiyoriy)..." ${isVoted ? 'readonly' : ''}>${myVote ? (myVote.advice || '') : ''}</textarea>
+                            <textarea id="advice-${item.entryid}" class="w-full ${isVoted ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-900 text-slate-200'} border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-blue-500 transition resize-none" placeholder="O'z maslahatingizni yozing..." ${isVoted ? 'readonly' : ''}>${myVote ? (myVote.advice || '') : ''}</textarea>
                         </div>
 
                         ${!isVoted ? 
                             `<button onclick="submitVote('${item.entryid}', '${cat}')" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-blue-600/20 mt-4 tracking-wider">TASDIQLASH VA OVOZ BERISH</button>` 
                             : 
-                            `<div class="w-full bg-emerald-600/20 text-emerald-500 py-5 rounded-[2rem] font-black text-center text-lg mt-4 border border-emerald-500/30 cursor-not-allowed tracking-wider">OVOZ BERINGAN</div>`
+                            `<div class="w-full bg-emerald-600/20 text-emerald-500 py-5 rounded-[2rem] font-black text-center text-lg mt-4 border border-emerald-500/30 cursor-not-allowed tracking-wider">OVOZ BERILGAN</div>`
                         }
                     </div>
                 </div>`;
             });
         }
 
+        // Shrifti kattalashtirilgan yulduzchalar bloki
         function qBox(id, qk, txt, myVal, isVoted) {
-            let stars = `<div class="star-rating" id="stars-${id}-${qk}">`;
+            let stars = `<div class="star-rating mt-2" id="stars-${id}-${qk}">`;
             for(let i=1; i<=10; i++) {
                 const activeClass = i <= myVal ? 'active' : '';
                 const onClick = isVoted ? '' : `onclick="setS('${id}','${qk}',${i})"`;
@@ -339,7 +369,7 @@
                 stars += `<span class="star ${activeClass} ${cursor}" ${onClick}>★</span>`;
             }
             stars += `</div><input type="hidden" id="val-${id}-${qk}" value="${myVal}">`;
-            return `<div class="space-y-2"><p class="text-[11px] text-slate-300 font-bold uppercase ml-1 tracking-wide break-words leading-relaxed">${txt}</p>${stars}</div>`;
+            return `<div class="space-y-1"><p class="text-sm md:text-base text-slate-200 font-bold uppercase ml-1 tracking-wide break-words leading-relaxed">${txt}</p>${stars}</div>`;
         }
 
         function setS(id, qk, v) {
