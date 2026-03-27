@@ -13,6 +13,9 @@
         .star.active { color: #fbbf24; text-shadow: 0 0 12px rgba(251, 191, 36, 0.5); transform: scale(1.1); }
         .diamond-shape { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
         html { scroll-behavior: smooth; }
+        /* Kichik scrollbar leaderboard uchun */
+        .custom-scroll::-webkit-scrollbar { height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-[#020617] text-slate-200 min-h-screen">
@@ -67,9 +70,9 @@
                 <h2 id="category-title" class="text-2xl font-black text-white uppercase italic"></h2>
             </div>
             
-            <div id="category-leaderboard" class="bg-slate-900/60 p-6 rounded-[2rem] border border-slate-800 shadow-xl overflow-x-auto">
-                <h3 class="text-[10px] text-blue-400 font-bold tracking-[0.2em] uppercase mb-4 text-center">🏆 TOP Reyting</h3>
-                <div id="leaderboard-content" class="flex gap-4 min-w-max"></div>
+            <div id="category-leaderboard" class="bg-slate-900/60 p-6 rounded-[2rem] border border-slate-800 shadow-xl overflow-x-auto custom-scroll">
+                <h3 class="text-[10px] text-blue-400 font-bold tracking-[0.2em] uppercase mb-4 pl-2">🏆 TOP Reyting</h3>
+                <div id="leaderboard-content" class="flex flex-col md:flex-row gap-4 min-w-max pb-2"></div>
             </div>
 
             <div id="gallery-container" class="space-y-24"></div>
@@ -78,11 +81,11 @@
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzJlnViibvOFMDRuNYah4AZe7Ly10PVrg5fP0Jdih2QexUbBdSKvUjiHjQ041DJTqMb/exec'; // 👈 YANGI URL SHU YERGA
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzm1YgqV7uFTePxImQjjE_8d5X868owPD1BCd1m-Ims69Ztyl3PZAoxlDRXtResPJ3m/exec'; // 👈 YANGI URL SHU YERGA
         
         const tg = window.Telegram.WebApp;
         tg.expand();
-        let userId = (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : new URLSearchParams(window.location.search).get('id'));
+        let userId = (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : newSearchParams(window.location.search).get('id'));
         let allEntries = [];
         let leaderboardData = [];
         let isDataLoaded = false;
@@ -113,7 +116,6 @@
             document.getElementById('gallery-view').classList.add('hidden');
         }
 
-        // Fisher-Yates Shuffle funksiyasi (Randomizatsiya)
         function shuffleArray(array) {
             let curId = array.length;
             while (0 !== curId) {
@@ -126,6 +128,14 @@
             return array;
         }
 
+        function getStarsHtml(score) {
+            let stars = '';
+            for(let i=1; i<=10; i++) {
+                stars += `<span style="color: ${i <= Math.round(score) ? '#fbbf24' : '#334155'}; text-shadow: ${i <= Math.round(score) ? '0 0 5px rgba(251,191,36,0.5)' : 'none'}">★</span>`;
+            }
+            return stars;
+        }
+
         function showGallery(cat) {
             if(!isDataLoaded) return alert("Iltimos, ma'lumotlar yuklanishini kuting!");
             
@@ -134,7 +144,7 @@
             document.getElementById('category-title').innerText = cat;
             
             let filtered = allEntries.filter(e => e.category === cat);
-            filtered = shuffleArray(filtered); // Random joylashuv
+            filtered = shuffleArray(filtered); 
             
             renderLeaderboard(cat);
             renderGallery(filtered, cat);
@@ -142,20 +152,28 @@
 
         function renderLeaderboard(cat) {
             const container = document.getElementById('leaderboard-content');
-            // Faqat joriy kategoriya dashboardlarini reytingga saralash
             const catEntryIds = allEntries.filter(e => e.category === cat).map(e => String(e.entryid));
             const catLeaderboard = leaderboardData
                 .filter(l => catEntryIds.includes(String(l.id)))
                 .sort((a,b) => b.avg - a.avg);
 
-            container.innerHTML = catLeaderboard.map((s, index) => `
-                <button onclick="document.getElementById('dash-${s.id}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
-                   class="bg-slate-800 hover:bg-slate-700 transition px-5 py-3 rounded-2xl border border-slate-700 flex flex-col items-center min-w-[140px]">
-                    <span class="text-xs text-blue-400 font-black mb-1">#${index+1} O'RIN</span>
-                    <span class="text-sm font-bold text-white truncate w-full text-center">${s.title}</span>
-                    <span class="text-xs text-yellow-500 font-mono mt-1">${s.avg} ★</span>
-                </button>
-            `).join('') || '<p class="text-slate-500 text-xs italic mx-auto">Natijalar tez kunda...</p>';
+            container.innerHTML = catLeaderboard.map((s, index) => {
+                const entryData = allEntries.find(e => String(e.entryid) === String(s.id));
+                const img = entryData ? entryData.fileurl : '';
+                const qScores = cat === 'PowerBI' ? `(${s.q1}, ${s.q2}, ${s.q3}, ${s.q4})` : `(${s.q1}, ${s.q2}, ${s.q3})`;
+
+                return `
+                <div onclick="document.getElementById('dash-${s.id}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
+                     class="flex items-center gap-4 bg-slate-800 hover:bg-slate-700 transition px-5 py-3 rounded-2xl border border-slate-700 cursor-pointer min-w-[320px] max-w-md">
+                    <span class="text-xl text-blue-400 font-black">#${index+1}</span>
+                    <img src="${img}" class="w-16 h-12 object-cover rounded-lg border border-slate-600 bg-slate-900" loading="lazy">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-bold text-white truncate">${s.id} - ${s.title}</div>
+                        <div class="flex items-center gap-1 mt-0.5 text-sm tracking-widest">${getStarsHtml(s.avg)}</div>
+                        <div class="text-[10px] text-slate-400 font-mono mt-0.5">${s.avg}/10 &nbsp; ${qScores}</div>
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-slate-500 text-xs italic">Natijalar tez kunda...</p>';
         }
 
         function renderGallery(entries, cat) {
@@ -165,53 +183,59 @@
             entries.forEach(item => {
                 const scoreObj = leaderboardData.find(l => String(l.id) === String(item.entryid));
                 const avgScore = scoreObj ? parseFloat(scoreObj.avg) : 0;
-                let actualStars = '';
-                for(let i=1; i<=10; i++) {
-                    actualStars += `<span style="color: ${i <= Math.round(avgScore) ? '#fbbf24' : '#334155'}; text-shadow: ${i <= Math.round(avgScore) ? '0 0 8px rgba(251,191,36,0.6)' : 'none'}">★</span>`;
+                
+                // Oldingi fayl linklarini force download qilish (Backend dagi yangilanishdan avvalgilar uchun)
+                let dlLink = item.excelurl;
+                if(dlLink && dlLink.includes('file/d/')) {
+                    const fileId = dlLink.split('file/d/')[1].split('/')[0];
+                    dlLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 }
 
-                // Layout Breakdown fixed with min-w-0 and break-words
+                // Layout Breakdown fixed. Left (Info + Image), Right (Voting)
                 container.innerHTML += `
                 <div id="dash-${item.entryid}" class="grid grid-cols-1 xl:grid-cols-12 gap-8 bg-slate-900/40 p-6 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative">
                     
-                    <div class="xl:col-span-5 space-y-4 min-w-0">
+                    <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col">
                         <img src="${item.fileurl}" class="w-full h-auto rounded-[2rem] shadow-lg border border-slate-700 bg-slate-800 object-contain max-h-[500px]" alt="Main" loading="lazy">
+                        
                         <div class="flex flex-wrap gap-3 items-center">
                             ${item.extra1 ? `<img src="${item.extra1}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
                             ${item.extra2 ? `<img src="${item.extra2}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
                             ${item.extra3 ? `<img src="${item.extra3}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
                             ${item.extra4 ? `<img src="${item.extra4}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
-                            ${item.excelurl ? `<a href="${item.excelurl}" target="_blank" class="w-12 h-12 md:w-14 md:h-14 bg-emerald-600/20 text-emerald-400 flex items-center justify-center diamond-shape border border-emerald-500/40 ml-auto transition hover:scale-110" title="Faylni tortish">📥</a>` : ''}
+                            ${dlLink ? `<a href="${dlLink}" target="_blank" class="w-12 h-12 md:w-14 md:h-14 bg-emerald-600/20 text-emerald-400 flex items-center justify-center diamond-shape border border-emerald-500/40 ml-auto transition hover:scale-110" title="Faylni 1 clickda tortish">📥</a>` : ''}
                         </div>
-                    </div>
 
-                    <div class="xl:col-span-7 space-y-8 min-w-0 flex flex-col">
-                        <div>
+                        <div class="mt-4 border-t border-slate-800 pt-6">
                             <div class="inline-block bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryid}</div>
                             <h3 class="text-3xl font-black text-white italic leading-tight break-words">${item.title || 'Nomsiz Dashboard'}</h3>
                             <div class="flex items-center gap-2 mt-3 text-2xl tracking-widest flex-wrap">
-                                ${actualStars} <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10</span>
+                                ${getStarsHtml(avgScore)} <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10</span>
                             </div>
                         </div>
 
-                        <div class="bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50">
+                        <div class="bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 mt-4 grow">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">DESCRIPTION</h4>
-                            <p class="text-sm text-slate-300 leading-relaxed break-words whitespace-pre-wrap">${item.description || 'Tavsif berilmagan.'}</p>
+                            <p class="text-sm text-slate-300 leading-relaxed break-words whitespace-pre-wrap">${item.description || 'Tavsif yo\'q.'}</p>
                         </div>
+                    </div>
 
-                        <div class="space-y-5 bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+                    <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col justify-center bg-slate-800/20 p-6 md:p-8 rounded-[2rem] border border-slate-700/50">
+                        <h4 class="text-sm font-bold text-blue-400 uppercase tracking-widest mb-2 border-b border-slate-700 pb-3">Ovoz Berish Paneli</h4>
+                        
+                        <div class="space-y-5">
                             ${qBox(item.entryid, 'q1', "Dizayn (chart, rang, shakl)")}
                             ${qBox(item.entryid, 'q2', "Tushunarlilik (insightlar)")}
                             ${qBox(item.entryid, 'q3', "Biznes uchun ahamiyati")}
                             ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "DAX dan qo'llanish darajasi (ochmasangiz 10)") : ''}
                         </div>
 
-                        <div class="space-y-2 mt-auto">
+                        <div class="space-y-2 mt-6">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Viewer's Advice (Ixtiyoriy)</h4>
-                            <textarea id="advice-${item.entryid}" class="w-full bg-slate-800/80 border border-slate-700 p-4 rounded-3xl outline-none text-sm h-20 focus:border-blue-500 transition resize-none" placeholder="O'z maslahatingizni yozing..."></textarea>
+                            <textarea id="advice-${item.entryid}" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-blue-500 transition resize-none" placeholder="O'z maslahatingizni yozing..."></textarea>
                         </div>
 
-                        <button onclick="submitVote('${item.entryid}', '${cat}')" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-blue-600/20">TASDIQLASH VA OVOZ BERISH</button>
+                        <button onclick="submitVote('${item.entryid}', '${cat}')" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-blue-600/20 mt-4">TASDIQLASH VA OVOZ BERISH</button>
                     </div>
                 </div>`;
             });
@@ -278,7 +302,6 @@
                     alert("Siz ushbu dashboardga allaqachon ovoz bergansiz! Boshqalarini ham baholang.");
                 } else {
                     alert("Rahmat! Ovozingiz qabul qilindi.");
-                    // Ovoz berilgan qutini yashil rangga bo'yab qo'yish
                     document.getElementById(`dash-${id}`).style.borderColor = "#10b981";
                 }
             }
