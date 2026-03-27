@@ -9,11 +9,10 @@
     <style>
         .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .star-rating { display: flex; flex-wrap: nowrap; gap: 4px; }
-        .star { font-size: 26px; cursor: pointer; color: #334155; transition: 0.2s; line-height: 1; }
+        .star { font-size: 26px; color: #334155; transition: 0.2s; line-height: 1; }
         .star.active { color: #fbbf24; text-shadow: 0 0 12px rgba(251, 191, 36, 0.5); transform: scale(1.1); }
         .diamond-shape { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
         html { scroll-behavior: smooth; }
-        /* Kichik scrollbar leaderboard uchun */
         .custom-scroll::-webkit-scrollbar { height: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
@@ -49,16 +48,15 @@
                 <input type="text" id="new-title" placeholder="Loyiha nomi / Talaba Ismi" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none">
                 <textarea id="new-desc" placeholder="Loyiha tavsifi..." class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none h-20"></textarea>
                 <input type="url" id="new-pbi" placeholder="Power BI Link (ixtiyoriy)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
-                
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1"><label class="text-[10px] text-slate-500">MAIN PHOTO*</label><input type="file" id="new-img" accept="image/*" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
                     <div class="space-y-1"><label class="text-[10px] text-slate-500">EXCEL FILE</label><input type="file" id="new-excel" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
                 </div>
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                    <div class="space-y-1"><label class="text-[10px] text-slate-500">EXTRA 1</label><input type="file" id="new-ex1" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full"></div>
-                    <div class="space-y-1"><label class="text-[10px] text-slate-500">EXTRA 2</label><input type="file" id="new-ex2" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full"></div>
-                    <div class="space-y-1"><label class="text-[10px] text-slate-500">EXTRA 3</label><input type="file" id="new-ex3" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full"></div>
-                    <div class="space-y-1"><label class="text-[10px] text-slate-500">EXTRA 4</label><input type="file" id="new-ex4" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full"></div>
+                    <input type="file" id="new-ex1" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full">
+                    <input type="file" id="new-ex2" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full">
+                    <input type="file" id="new-ex3" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full">
+                    <input type="file" id="new-ex4" accept="image/*" class="text-[10px] bg-slate-900 p-2 rounded-xl w-full">
                 </div>
                 <button onclick="uploadEntry()" id="up-btn" class="w-full bg-blue-600 py-4 rounded-2xl font-black shadow-lg hover:bg-blue-500 mt-4">🚀 PUBLISH</button>
             </section>
@@ -81,13 +79,14 @@
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzm1YgqV7uFTePxImQjjE_8d5X868owPD1BCd1m-Ims69Ztyl3PZAoxlDRXtResPJ3m/exec'; // 👈 YANGI URL SHU YERGA
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwsk6tu8cMnOdLzwjZF0g4S_2D20v0Zk4s1PqEHmsllS5P8m0wEIGXYbd_2hLUFQkGe/exec'; // 👈 YANGI URL SHU YERGA
         
         const tg = window.Telegram.WebApp;
         tg.expand();
-        let userId = (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : newSearchParams(window.location.search).get('id'));
+        let userId = (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : new URLSearchParams(window.location.search).get('id'));
         let allEntries = [];
         let leaderboardData = [];
+        let myVotes = []; // Mening ovozlarim
         let isDataLoaded = false;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -98,10 +97,15 @@
 
         async function fetchData() {
             try {
-                const res = await fetch(WEB_APP_URL);
+                // Backendga user id ni ham yuboramiz
+                const urlWithParams = userId ? `${WEB_APP_URL}?userId=${userId}` : WEB_APP_URL;
+                const res = await fetch(urlWithParams);
                 const data = await res.json();
+                
                 allEntries = data.entries || [];
                 leaderboardData = data.leaderboard || [];
+                myVotes = data.userVotes || []; // Mening ovozlarimni yuklash
+                
                 isDataLoaded = true;
                 document.getElementById('loading-indicator').innerText = "Tizim tayyor! Yo'nalishni tanlang 👇";
                 document.getElementById('loading-indicator').classList.remove('animate-pulse');
@@ -136,6 +140,17 @@
             return stars;
         }
 
+        // TASHQI LINKLARNI OCHISH UCHUN XAVFSIZ FUNKSIYA (Fayl tortish va Rasm kattalashtirish)
+        function openExternalLink(url) {
+            if (!url) return;
+            // Agar Telegram WebApp ichida bo'lsa, maxsus openLink funksiyasidan foydalanamiz
+            if (window.Telegram && window.Telegram.WebApp && tg.initDataUnsafe.user) {
+                tg.openLink(url);
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
         function showGallery(cat) {
             if(!isDataLoaded) return alert("Iltimos, ma'lumotlar yuklanishini kuting!");
             
@@ -144,10 +159,19 @@
             document.getElementById('category-title').innerText = cat;
             
             let filtered = allEntries.filter(e => e.category === cat);
-            filtered = shuffleArray(filtered); 
+            
+            // 3. OVOZ BERILGANLARNI AJRATISH VA OXRIGA O'TKAZISH
+            const scoredIds = myVotes.filter(v => v.category === cat).map(v => String(v.entryId));
+            let unscored = filtered.filter(item => !scoredIds.includes(String(item.entryid)));
+            let scored = filtered.filter(item => scoredIds.includes(String(item.entryid)));
+            
+            unscored = shuffleArray(unscored); // Yangilari aralash chiqadi
+            scored = shuffleArray(scored); // Eskilari ham aralash chiqadi
+            
+            const finalList = [...unscored, ...scored]; // Yangilar oldin, baholanganlar keyin
             
             renderLeaderboard(cat);
-            renderGallery(filtered, cat);
+            renderGallery(finalList, cat);
         }
 
         function renderLeaderboard(cat) {
@@ -184,33 +208,35 @@
                 const scoreObj = leaderboardData.find(l => String(l.id) === String(item.entryid));
                 const avgScore = scoreObj ? parseFloat(scoreObj.avg) : 0;
                 
-                // Oldingi fayl linklarini force download qilish (Backend dagi yangilanishdan avvalgilar uchun)
+                // Men bu dashboardga ovoz berganmanmi?
+                const myVote = myVotes.find(v => String(v.entryId) === String(item.entryid));
+                const isVoted = !!myVote;
+
                 let dlLink = item.excelurl;
                 if(dlLink && dlLink.includes('file/d/')) {
                     const fileId = dlLink.split('file/d/')[1].split('/')[0];
                     dlLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 }
 
-                // Layout Breakdown fixed. Left (Info + Image), Right (Voting)
                 container.innerHTML += `
-                <div id="dash-${item.entryid}" class="grid grid-cols-1 xl:grid-cols-12 gap-8 bg-slate-900/40 p-6 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative">
+                <div id="dash-${item.entryid}" class="grid grid-cols-1 xl:grid-cols-12 gap-8 bg-slate-900/40 p-6 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative ${isVoted ? 'border-emerald-500/50 bg-emerald-900/10' : ''}">
                     
                     <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col">
-                        <img src="${item.fileurl}" class="w-full h-auto rounded-[2rem] shadow-lg border border-slate-700 bg-slate-800 object-contain max-h-[500px]" alt="Main" loading="lazy">
+                        <img src="${item.fileurl}" class="w-full h-auto rounded-[2rem] shadow-lg border border-slate-700 bg-slate-800 object-contain max-h-[500px] cursor-zoom-in hover:scale-[1.01] transition" alt="Main" loading="lazy" onclick="openExternalLink(this.src)">
                         
                         <div class="flex flex-wrap gap-3 items-center">
-                            ${item.extra1 ? `<img src="${item.extra1}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
-                            ${item.extra2 ? `<img src="${item.extra2}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
-                            ${item.extra3 ? `<img src="${item.extra3}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
-                            ${item.extra4 ? `<img src="${item.extra4}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="window.open(this.src)">` : ''}
-                            ${dlLink ? `<a href="${dlLink}" target="_blank" class="w-12 h-12 md:w-14 md:h-14 bg-emerald-600/20 text-emerald-400 flex items-center justify-center diamond-shape border border-emerald-500/40 ml-auto transition hover:scale-110" title="Faylni 1 clickda tortish">📥</a>` : ''}
+                            ${item.extra1 ? `<img src="${item.extra1}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="openExternalLink(this.src)">` : ''}
+                            ${item.extra2 ? `<img src="${item.extra2}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="openExternalLink(this.src)">` : ''}
+                            ${item.extra3 ? `<img src="${item.extra3}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="openExternalLink(this.src)">` : ''}
+                            ${item.extra4 ? `<img src="${item.extra4}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in hover:scale-105 transition" onclick="openExternalLink(this.src)">` : ''}
+                            ${dlLink ? `<button onclick="openExternalLink('${dlLink}')" class="w-12 h-12 md:w-14 md:h-14 bg-emerald-600/20 text-emerald-400 flex items-center justify-center diamond-shape border border-emerald-500/40 ml-auto transition hover:scale-110" title="Faylni tortish">📥</button>` : ''}
                         </div>
 
                         <div class="mt-4 border-t border-slate-800 pt-6">
-                            <div class="inline-block bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryid}</div>
+                            <div class="inline-block ${isVoted ? 'bg-emerald-600' : 'bg-blue-600'} text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryid}</div>
                             <h3 class="text-3xl font-black text-white italic leading-tight break-words">${item.title || 'Nomsiz Dashboard'}</h3>
                             <div class="flex items-center gap-2 mt-3 text-2xl tracking-widest flex-wrap">
-                                ${getStarsHtml(avgScore)} <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10</span>
+                                ${getStarsHtml(avgScore)} <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10 O'rtacha</span>
                             </div>
                         </div>
 
@@ -221,30 +247,43 @@
                     </div>
 
                     <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col justify-center bg-slate-800/20 p-6 md:p-8 rounded-[2rem] border border-slate-700/50">
-                        <h4 class="text-sm font-bold text-blue-400 uppercase tracking-widest mb-2 border-b border-slate-700 pb-3">Ovoz Berish Paneli</h4>
+                        <h4 class="text-sm font-bold ${isVoted ? 'text-emerald-400' : 'text-blue-400'} uppercase tracking-widest mb-2 border-b border-slate-700 pb-3">
+                            ${isVoted ? '✅ SIZNING OVOZINGIZ' : 'Ovoz Berish Paneli'}
+                        </h4>
                         
                         <div class="space-y-5">
-                            ${qBox(item.entryid, 'q1', "Dizayn (chart, rang, shakl)")}
-                            ${qBox(item.entryid, 'q2', "Tushunarlilik (insightlar)")}
-                            ${qBox(item.entryid, 'q3', "Biznes uchun ahamiyati")}
-                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "DAX dan qo'llanish darajasi (ochmasangiz 10)") : ''}
+                            ${qBox(item.entryid, 'q1', "Dizayn (chart, rang, shakl)", myVote ? myVote.q1 : 0, isVoted)}
+                            ${qBox(item.entryid, 'q2', "Tushunarlilik (insightlar)", myVote ? myVote.q2 : 0, isVoted)}
+                            ${qBox(item.entryid, 'q3', "Biznes uchun ahamiyati", myVote ? myVote.q3 : 0, isVoted)}
+                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "DAX dan qo'llanish darajasi (ochmasangiz 10)", myVote ? myVote.q4 : 0, isVoted) : ''}
                         </div>
 
                         <div class="space-y-2 mt-6">
-                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Viewer's Advice (Ixtiyoriy)</h4>
-                            <textarea id="advice-${item.entryid}" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-blue-500 transition resize-none" placeholder="O'z maslahatingizni yozing..."></textarea>
+                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Viewer's Advice</h4>
+                            <textarea id="advice-${item.entryid}" class="w-full ${isVoted ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-900 text-slate-200'} border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-blue-500 transition resize-none" placeholder="O'z maslahatingizni yozing..." ${isVoted ? 'readonly' : ''}>${myVote ? (myVote.advice || '') : ''}</textarea>
                         </div>
 
-                        <button onclick="submitVote('${item.entryid}', '${cat}')" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-blue-600/20 mt-4">TASDIQLASH VA OVOZ BERISH</button>
+                        ${!isVoted ? 
+                            `<button onclick="submitVote('${item.entryid}', '${cat}')" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-blue-600/20 mt-4">TASDIQLASH VA OVOZ BERISH</button>` 
+                            : 
+                            `<div class="w-full bg-emerald-600/20 text-emerald-500 py-5 rounded-[2rem] font-black text-center text-lg mt-4 border border-emerald-500/30 cursor-not-allowed">OVOZ BERINGAN</div>`
+                        }
                     </div>
                 </div>`;
             });
         }
 
-        function qBox(id, qk, txt) {
+        // QUTINI CHIZISH (Agar oldin ovoz berilgan bo'lsa, click ishlamaydi va saqlangan baho yonadi)
+        function qBox(id, qk, txt, myVal, isVoted) {
             let stars = `<div class="star-rating" id="stars-${id}-${qk}">`;
-            for(let i=1; i<=10; i++) stars += `<span class="star" onclick="setS('${id}','${qk}',${i})">★</span>`;
-            return `<div class="space-y-2"><p class="text-[10px] text-slate-400 font-bold uppercase ml-1 tracking-wider break-words">${txt}</p>${stars}</div><input type="hidden" id="val-${id}-${qk}" value="0">`;
+            for(let i=1; i<=10; i++) {
+                const activeClass = i <= myVal ? 'active' : '';
+                const onClick = isVoted ? '' : `onclick="setS('${id}','${qk}',${i})"`;
+                const cursor = isVoted ? 'cursor-default' : 'cursor-pointer';
+                stars += `<span class="star ${activeClass} ${cursor}" ${onClick}>★</span>`;
+            }
+            stars += `</div><input type="hidden" id="val-${id}-${qk}" value="${myVal}">`;
+            return `<div class="space-y-2"><p class="text-[10px] text-slate-400 font-bold uppercase ml-1 tracking-wider break-words">${txt}</p>${stars}</div>`;
         }
 
         function setS(id, qk, v) {
@@ -268,7 +307,7 @@
 
             if(!fileEl || !eid || !title) return alert("Majburiy: ID, Nomi va Asosiy Rasm!");
 
-            btn.innerText = "⏳ YUKLANMOQDA (Kutib turing)..."; btn.disabled = true;
+            btn.innerText = "⏳ YUKLANMOQDA..."; btn.disabled = true;
             try {
                 const payload = {
                     action: 'upload', category: document.getElementById('new-cat').value, entryId: eid, 
@@ -285,7 +324,7 @@
 
                 await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
                 alert("Muvaffaqiyatli!"); location.reload();
-            } catch (err) { alert("Xato: " + err); btn.innerText = "PUBLISH"; btn.disabled = false; }
+            } catch (err) { alert("Xato!"); btn.innerText = "PUBLISH"; btn.disabled = false; }
         }
 
         async function submitVote(id, cat) {
@@ -293,16 +332,16 @@
             const q1=document.getElementById(`val-${id}-q1`).value, q2=document.getElementById(`val-${id}-q2`).value, q3=document.getElementById(`val-${id}-q3`).value, q4=cat==='PowerBI'?document.getElementById(`val-${id}-q4`).value:0;
             const advice = document.getElementById(`advice-${id}`).value;
             
-            if(q1==0||q2==0||q3==0 || (cat==='PowerBI' && q4==0)) return alert("Barcha savollarga (yulduzchalar) baho bering!");
+            if(q1==0||q2==0||q3==0 || (cat==='PowerBI' && q4==0)) return alert("Barcha yulduzchalarga baho bering!");
 
             if(confirm(`ID #${id} ga bergan ovozingizni tasdiqlaysizmi?`)) {
                 const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action:'vote', voterId:userId, entryId:id, q1, q2, q3, q4, advice, category:cat}) });
                 const result = await res.json();
                 if (result.status === 'duplicate') {
-                    alert("Siz ushbu dashboardga allaqachon ovoz bergansiz! Boshqalarini ham baholang.");
+                    alert("Siz ushbu dashboardga allaqachon ovoz bergansiz!");
                 } else {
                     alert("Rahmat! Ovozingiz qabul qilindi.");
-                    document.getElementById(`dash-${id}`).style.borderColor = "#10b981";
+                    location.reload(); // Sahifani yangilaymiz, shunda yangi quticha yashil bo'lib pastga tushadi
                 }
             }
         }
