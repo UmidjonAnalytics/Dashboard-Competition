@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Umidjon Analytics - Dashboard Musobaqasi</title>
+    <title>Umidjon Analytics</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -25,48 +25,53 @@
         <div id="home-view" class="space-y-12 py-10">
             <div class="text-center space-y-4">
                 <h2 class="text-5xl font-black text-white">Dashboard Challenge <span class="text-blue-500">2026</span></h2>
-                <div class="flex justify-center gap-6 pt-10">
+                <div class="flex flex-wrap justify-center gap-6 pt-10">
                     <button onclick="showGallery('Excel')" class="w-64 bg-green-600/20 border border-green-500/30 p-12 rounded-[3rem] hover:scale-105 transition">
-                        <div class="text-5xl mb-4">📊</div>
-                        <div class="font-bold text-xl text-green-400">EXCEL</div>
+                        <div class="text-5xl mb-4">📊</div><div class="font-bold text-xl text-green-400">EXCEL</div>
                     </button>
                     <button onclick="showGallery('PowerBI')" class="w-64 bg-yellow-500/10 border border-yellow-500/20 p-12 rounded-[3rem] hover:scale-105 transition">
-                        <div class="text-5xl mb-4">⚡</div>
-                        <div class="font-bold text-xl text-yellow-500">POWER BI</div>
+                        <div class="text-5xl mb-4">⚡</div><div class="font-bold text-xl text-yellow-500">POWER BI</div>
                     </button>
                 </div>
             </div>
 
             <section id="admin-panel" class="hidden max-w-2xl mx-auto p-10 rounded-[3rem] border-2 border-dashed border-blue-500/20 bg-blue-500/5 space-y-4">
-                <h3 class="text-blue-400 font-bold uppercase tracking-widest text-sm">🛠 Admin: Dashboard Qo'shish</h3>
+                <h3 class="text-blue-400 font-bold uppercase tracking-widest text-sm">🛠 Admin: Yangi Dashboard</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <select id="new-cat" class="bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm"><option value="Excel">Excel</option><option value="PowerBI">Power BI</option></select>
-                    <input type="text" id="new-eid" placeholder="Entry ID (ex: #001)" class="bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
+                    <input type="text" id="new-eid" placeholder="ID (ex: 001 Test)" class="bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
                 </div>
-                <input type="text" id="new-title" placeholder="Loyiha nomi (Dashboard Title)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none">
-                <textarea id="new-desc" placeholder="Loyiha tavsifi (Description)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none h-24"></textarea>
-                <input type="url" id="new-pbi" placeholder="Power BI Service Link" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
+                <input type="text" id="new-title" placeholder="Loyiha nomi / Talaba Ismi" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none">
+                <textarea id="new-desc" placeholder="Loyiha tavsifi..." class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none h-20"></textarea>
+                <input type="url" id="new-pbi" placeholder="Power BI Link (ixtiyoriy)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
+                
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="file" id="new-img" accept="image/*" class="text-xs bg-slate-900 p-3 rounded-2xl border border-slate-700">
-                    <button onclick="uploadEntry()" id="up-btn" class="bg-blue-600 py-3 rounded-2xl font-black">PUBLISH</button>
+                    <div class="space-y-1"><label class="text-[10px] text-slate-500 ml-2">MAIN PHOTO* (PNG/JPG)</label><input type="file" id="new-img" accept="image/*" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
+                    <div class="space-y-1"><label class="text-[10px] text-slate-500 ml-2">EXCEL FILE (.XLSX/.PBIX)</label><input type="file" id="new-excel" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1"><label class="text-[10px] text-slate-500 ml-2">EXTRA PHOTO 1</label><input type="file" id="new-ex1" accept="image/*" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
+                    <div class="space-y-1"><label class="text-[10px] text-slate-500 ml-2">EXTRA PHOTO 2</label><input type="file" id="new-ex2" accept="image/*" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
+                </div>
+                <button onclick="uploadEntry()" id="up-btn" class="w-full bg-blue-600 py-4 rounded-2xl font-black shadow-lg hover:bg-blue-500 transition mt-4">🚀 PUBLISH</button>
             </section>
         </div>
 
-        <div id="gallery-view" class="hidden space-y-16 pb-32">
-            <button onclick="showHome()" class="bg-slate-800 px-6 py-2 rounded-xl text-sm font-bold">← Orqaga</button>
+        <div id="gallery-view" class="hidden space-y-10 pb-32">
+            <button onclick="showHome()" class="bg-slate-800 px-6 py-2 rounded-xl text-sm font-bold border border-slate-700">← Orqaga</button>
             <div id="gallery-container" class="space-y-24"></div>
         </div>
     </main>
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwRKmpDIG_DNqC2-lQWW6IfuCTHVPEBUGkz3YFIsLCQcxqPFoxT5jB0_RVWngwqG7_Y/exec'; 
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwsWDI0lCQ1C18xXT2dVG4kk7N2Hw0uEzOBuxQtTvEWAGu2yQwOWmzQWdLIPVUfpPRp/exec'; // 👈 YANGI URL SHU YERGA
         
         const tg = window.Telegram.WebApp;
         tg.expand();
         let userId = (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : new URLSearchParams(window.location.search).get('id'));
         let allEntries = [];
+        let leaderboardData = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             if(userId) document.getElementById('user-display').innerText = `ID: ${userId}`;
@@ -77,8 +82,10 @@
         async function fetchData() {
             try {
                 const res = await fetch(WEB_APP_URL);
-                allEntries = await res.json();
-            } catch (e) { console.error("API error"); }
+                const data = await res.json();
+                allEntries = data.entries || [];
+                leaderboardData = data.leaderboard || [];
+            } catch (e) { console.error("Data fetch error"); }
         }
 
         function showHome() {
@@ -92,93 +99,121 @@
             const filtered = allEntries.filter(e => e.category === cat);
             const container = document.getElementById('gallery-container');
             
-            container.innerHTML = filtered.map(item => `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 bg-slate-900/30 p-8 rounded-[3rem] border border-slate-800">
+            container.innerHTML = filtered.map(item => {
+                // Haqiqiy o'rtacha ballni aniqlash
+                const scoreObj = leaderboardData.find(l => l.id == item.entryid);
+                const avgScore = scoreObj ? parseFloat(scoreObj.avg) : 0;
+                let actualStars = '';
+                for(let i=1; i<=10; i++) {
+                    actualStars += `<span style="color: ${i <= Math.round(avgScore) ? '#fbbf24' : '#334155'}; text-shadow: ${i <= Math.round(avgScore) ? '0 0 8px rgba(251,191,36,0.6)' : 'none'}">★</span>`;
+                }
+
+                return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 bg-slate-900/40 p-8 rounded-[3rem] border border-slate-800 shadow-2xl">
                     <div class="lg:col-span-2 space-y-4">
-                        <img src="${item.fileUrl}" class="w-full h-auto rounded-[2rem] shadow-2xl border border-slate-700">
-                        <div class="flex gap-4">
-                            <div class="w-20 h-20 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-center text-xs opacity-50 italic">Extra Image</div>
-                            <div class="w-20 h-20 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-center text-xs opacity-50 italic">Extra Image</div>
-                            <button class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-full flex items-center justify-center diamond-shape border border-blue-500/40 ml-auto mt-4" title="Download File">📥</button>
+                        <img src="${item.fileurl}" class="w-full h-auto rounded-[2rem] shadow-lg border border-slate-700 bg-slate-800" alt="Main Dashboard Image" loading="lazy">
+                        <div class="flex gap-4 items-center">
+                            ${item.extra1 ? `<img src="${item.extra1}" class="w-20 h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in" onclick="window.open(this.src)">` : ''}
+                            ${item.extra2 ? `<img src="${item.extra2}" class="w-20 h-20 object-cover rounded-2xl border border-slate-700 cursor-zoom-in" onclick="window.open(this.src)">` : ''}
+                            ${item.excelurl ? `<a href="${item.excelurl}" target="_blank" class="w-14 h-14 bg-blue-600/20 text-blue-400 flex items-center justify-center diamond-shape border border-blue-500/40 ml-auto transition hover:scale-110" title="Download File">📥</a>` : ''}
                         </div>
                     </div>
 
                     <div class="space-y-8">
                         <div>
-                            <div class="inline-block bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryId}</div>
-                            <h3 class="text-3xl font-black text-white italic leading-tight">${item.title}</h3>
-                            <div class="flex items-center gap-2 mt-4 text-yellow-500">
-                                <span class="text-lg">★★★★★★☆☆☆☆</span>
-                                <span class="text-xs text-slate-500 font-bold">6.0/10</span>
+                            <div class="inline-block bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryid}</div>
+                            <h3 class="text-3xl font-black text-white italic leading-tight">${item.title || 'Nomsiz Dashboard'}</h3>
+                            <div class="flex items-center gap-2 mt-3 text-2xl tracking-widest">
+                                ${actualStars} <span class="text-xs text-slate-400 font-bold ml-2 font-mono">${avgScore.toFixed(1)}/10</span>
                             </div>
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50">
-                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Description</h4>
+                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">DESCRIPTION</h4>
                             <p class="text-sm text-slate-300 leading-relaxed">${item.description || 'Tavsif berilmagan.'}</p>
                         </div>
 
-                        <div class="space-y-6">
-                            ${qBox(item.entryId, 'q1', "Dizayn (chart, rang, shakl)")}
-                            ${qBox(item.entryId, 'q2', "Tushunarlilik (insightlar)")}
-                            ${qBox(item.entryId, 'q3', "Biznes uchun ahamiyati")}
+                        <div class="space-y-5">
+                            ${qBox(item.entryid, 'q1', "Dizayn (chart, rang, shakl)")}
+                            ${qBox(item.entryid, 'q2', "Tushunarlilik (insightlar)")}
+                            ${qBox(item.entryid, 'q3', "Biznes uchun ahamiyati")}
+                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "DAX dan qo'llanish darajasi (ochmasangiz 10)") : ''}
                         </div>
 
                         <div class="space-y-2">
-                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Viewer's Advice</h4>
-                            <textarea id="advice-${item.entryId}" class="w-full bg-slate-900 border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-blue-500 transition" placeholder="O'z fikringiz yoki maslahatingizni yozing..."></textarea>
+                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Viewer's Advice (Ixtiyoriy)</h4>
+                            <textarea id="advice-${item.entryid}" class="w-full bg-slate-800/80 border border-slate-700 p-4 rounded-3xl outline-none text-sm h-20 focus:border-blue-500 transition" placeholder="O'z maslahatingizni yozing..."></textarea>
                         </div>
 
-                        <button onclick="submitVote('${item.entryId}', '${cat}')" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-blue-600/20">TASDIQLASH</button>
+                        <button onclick="submitVote('${item.entryid}', '${cat}')" class="w-full bg-blue-600 hover:bg-blue-500 py-5 rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-blue-600/20">TASDIQLASH</button>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('') || `<p class="text-center text-slate-500 py-10">Ma'lumot topilmadi.</p>`;
         }
 
         function qBox(id, qk, txt) {
             let stars = `<div class="star-rating" id="stars-${id}-${qk}">`;
             for(let i=1; i<=10; i++) stars += `<span class="star" onclick="setS('${id}','${qk}',${i})">★</span>`;
-            return `<div class="space-y-1"><p class="text-[10px] text-slate-500 font-bold uppercase ml-1 tracking-wider">${txt}</p>${stars}</div><input type="hidden" id="val-${id}-${qk}" value="0">`;
+            return `<div class="space-y-1"><p class="text-[10px] text-slate-400 font-bold uppercase ml-1 tracking-wider">${txt}</p>${stars}</div><input type="hidden" id="val-${id}-${qk}" value="0">`;
         }
 
         function setS(id, qk, v) {
-            const container = document.getElementById(`stars-${id}-${qk}`);
-            const stars = container.getElementsByClassName('star');
+            const stars = document.getElementById(`stars-${id}-${qk}`).getElementsByClassName('star');
             document.getElementById(`val-${id}-${qk}`).value = v;
             for(let i=0; i<10; i++) stars[i].classList.toggle('active', i < v);
         }
 
+        // File o'qish uchun yordamchi funksiya
+        const readFile = (file) => new Promise(res => {
+            if(!file) return res(null);
+            const r = new FileReader();
+            r.onload = () => res({ data: r.result, type: file.type, name: file.name });
+            r.readAsDataURL(file);
+        });
+
         async function uploadEntry() {
             const btn = document.getElementById('up-btn');
-            const img = document.getElementById('new-img').files[0];
+            const fileEl = document.getElementById('new-img').files[0];
             const eid = document.getElementById('new-eid').value;
             const title = document.getElementById('new-title').value;
-            const desc = document.getElementById('new-desc').value;
-            if(!img || !eid || !title) return alert("Majburiy maydonlarni to'ldiring!");
 
-            btn.innerText = "⏳ PUBLISHING..."; btn.disabled = true;
-            const reader = new FileReader();
-            reader.readAsDataURL(img);
-            reader.onload = async () => {
+            if(!fileEl || !eid || !title) return alert("Majburiy: ID, Nomi va Asosiy Rasm!");
+
+            btn.innerText = "⏳ YUKLANMOQDA (Kutib turing)..."; btn.disabled = true;
+            try {
+                const mainImg = await readFile(fileEl);
+                const ex1 = await readFile(document.getElementById('new-ex1').files[0]);
+                const ex2 = await readFile(document.getElementById('new-ex2').files[0]);
+                const excel = await readFile(document.getElementById('new-excel').files[0]);
+
                 const payload = {
                     action: 'upload', category: document.getElementById('new-cat').value, entryId: eid, 
-                    title: title, description: desc, pbiLink: document.getElementById('new-pbi').value, 
-                    file: reader.result, fileType: img.type, fileName: img.name
+                    title: title, description: document.getElementById('new-desc').value, pbiLink: document.getElementById('new-pbi').value, 
+                    file: mainImg.data, fileType: mainImg.type, fileName: mainImg.name
                 };
+                
+                if (ex1) { payload.ex1 = ex1.data; payload.ex1Type = ex1.type; payload.ex1Name = ex1.name; }
+                if (ex2) { payload.ex2 = ex2.data; payload.ex2Type = ex2.type; payload.ex2Name = ex2.name; }
+                if (excel) { payload.excel = excel.data; payload.excelType = excel.type; payload.excelName = excel.name; }
+
                 await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
-                location.reload();
-            };
+                alert("Muvaffaqiyatli!"); location.reload();
+            } catch (err) { alert("Xato: " + err); btn.innerText = "PUBLISH"; btn.disabled = false; }
         }
 
         async function submitVote(id, cat) {
             if(!userId) return alert("Iltimos, bot orqali kiring!");
-            const q1=document.getElementById(`val-${id}-q1`).value, q2=document.getElementById(`val-${id}-q2`).value, q3=document.getElementById(`val-${id}-q3`).value;
+            const q1=document.getElementById(`val-${id}-q1`).value, q2=document.getElementById(`val-${id}-q2`).value, q3=document.getElementById(`val-${id}-q3`).value, q4=cat==='PowerBI'?document.getElementById(`val-${id}-q4`).value:0;
             const advice = document.getElementById(`advice-${id}`).value;
-            if(q1==0||q2==0||q3==0) return alert("Barcha savollarni baholang!");
+            
+            if(q1==0||q2==0||q3==0 || (cat==='PowerBI' && q4==0)) return alert("Barcha savollarni baholang!");
 
-            const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action:'vote', voterId:userId, entryId:id, q1, q2, q3, q4:0, advice:advice, category:cat}) });
-            const result = await res.json();
-            alert(result.status === 'duplicate' ? "Siz bu yo'nalishda ovoz bergansiz!" : "Rahmat! Ovozingiz qabul qilindi.");
-            showHome();
+            if(confirm("Tasdiqlaysizmi?")) {
+                const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action:'vote', voterId:userId, entryId:id, q1, q2, q3, q4, advice, category:cat}) });
+                const result = await res.json();
+                alert(result.status === 'duplicate' ? "Siz bu yo'nalishda ovoz bergansiz!" : "Rahmat!");
+                showHome();
+            }
         }
     </script>
 </body>
