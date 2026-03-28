@@ -54,7 +54,8 @@
                 </div>
                 <input type="text" id="new-title" placeholder="Loyiha nomi / Talaba Ismi" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none">
                 <textarea id="new-desc" placeholder="Loyiha tavsifi..." class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none h-20"></textarea>
-                <input type="url" id="new-pbi" placeholder="Power BI Link (ixtiyoriy)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
+                <input type="url" id="new-pbi" placeholder="Power BI Public Link (ixtiyoriy)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
+                
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1"><label class="text-[10px] text-slate-500">MAIN PHOTO*</label><input type="file" id="new-img" accept="image/*" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
                     <div class="space-y-1"><label class="text-[10px] text-slate-500">EXCEL FILE</label><input type="file" id="new-excel" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
@@ -172,6 +173,15 @@
                 stars += `<span style="color: ${i <= Math.round(score) ? '#fbbf24' : '#334155'}; text-shadow: ${i <= Math.round(score) ? '0 0 5px rgba(251,191,36,0.5)' : 'none'}">★</span>`;
             }
             return stars;
+        }
+
+        function openExternalLink(url) {
+            if (!url) return;
+            if (window.Telegram && window.Telegram.WebApp && tg.initDataUnsafe.user) {
+                tg.openLink(url);
+            } else {
+                window.open(url, '_blank');
+            }
         }
 
         function forceDownload(url) {
@@ -307,6 +317,14 @@
                     dlLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 }
                 const iconSvg = cat === 'Excel' ? excelIcon : pbiIcon;
+                
+                // POWER BI JONLI LINK TUGMASI UCHUN LOGIKA
+                const hasPbiLink = item.pbilink && item.pbilink.trim() !== '';
+                const liveBtn = hasPbiLink ? `
+                    <button onclick="openExternalLink('${item.pbilink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-blue-600/20 text-blue-400 flex items-center justify-center diamond-shape border-2 border-blue-500 transition hover:scale-110 hover:bg-blue-600/40 shadow-xl" title="Jonli Dashboardni ko'rish">
+                        🌐
+                    </button>
+                ` : '';
 
                 container.innerHTML += `
                 <div id="dash-${item.entryid}" class="grid grid-cols-1 xl:grid-cols-12 gap-8 bg-slate-900/40 p-6 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative ${isVoted ? 'border-emerald-500/50 bg-emerald-900/10' : ''}">
@@ -328,11 +346,14 @@
                                 </div>
                             </div>
                             
-                            ${dlLink ? `
-                            <button onclick="forceDownload('${dlLink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">
-                                ${iconSvg}
-                            </button>
-                            ` : ''}
+                            <div class="flex gap-2">
+                                ${liveBtn}
+                                ${dlLink ? `
+                                <button onclick="forceDownload('${dlLink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">
+                                    ${iconSvg}
+                                </button>
+                                ` : ''}
+                            </div>
                         </div>
 
                         <div class="bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 mt-4 grow">
@@ -350,7 +371,7 @@
                             ${qBox(item.entryid, 'q1', "Dashboard dizayniga (chartlar, ranglar, shakllar, textlar) qanday baho berasiz?", myVote ? myVote.q1 : 0, isVoted)}
                             ${qBox(item.entryid, 'q2', "Dashboard ortiqcha so'zlarsiz tushunarliligiga qanday baho berasiz?", myVote ? myVote.q2 : 0, isVoted)}
                             ${qBox(item.entryid, 'q3', "Dashboarddagi ma'lumotlari biznes uchun qaror chiqarishga qanchalik muhim deb o'ylaysiz?", myVote ? myVote.q3 : 0, isVoted)}
-                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "Power BI DAX dan qo'llanish darajasini qanday baholaysiz? (ochmasangiz 10 ball qo'ying)", myVote ? myVote.q4 : 0, isVoted) : ''}
+                            ${cat === 'PowerBI' ? qBox(item.entryid, 'q4', "Power BI DAX dan qo'llanish darajasini qanday baholaysiz?", myVote ? myVote.q4 : 0, isVoted) : ''}
                         </div>
 
                         <div class="space-y-2 mt-6">
@@ -429,7 +450,6 @@
             if(q1==0||q2==0||q3==0 || (cat==='PowerBI' && q4==0)) return alert("Barcha yulduzchalarga baho bering!");
 
             if(confirm(`ID #${id} ga bergan ovozingizni tasdiqlaysizmi?`)) {
-                // ISMNI HAM YUBORAMIZ (voterName: userName)
                 const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action:'vote', voterId:userId, voterName:userName, entryId:id, q1, q2, q3, q4, advice, category:cat}) });
                 const result = await res.json();
                 
