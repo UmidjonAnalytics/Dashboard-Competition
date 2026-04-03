@@ -96,9 +96,8 @@
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyRAKzNGYksNo27eYzMvtRLbt-C4MdpEkB-2yP5PWYzIYalqnHAwMJ-8vnZqofCih2M/exec'; // 👈 URL SHU YERGA
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzlZ1lCQ7sGMOIlytpZ78MfnBLh1Uq3ksJSuoZ6tmJJsyIvxkXq_8vpBLNoLQcsTajM/exec'; // 👈 URL SHU YERGA
         
-        // 🚨 DEADLINE SOZLAMASI (4-Aprel, 2026 yil soat 18:00 O'zbekiston vaqti)
         const DEADLINE = new Date('2026-04-04T18:00:00+05:00').getTime();
         
         const tg = window.Telegram.WebApp;
@@ -256,7 +255,7 @@
             const container = document.getElementById('gallery-container');
             container.innerHTML = entries.length ? '' : '<p class="text-center text-slate-500 py-10">Hozircha dashbordlar yo\'q.</p>';
             
-            const isTimeout = new Date().getTime() > DEADLINE; // VAQT TUGADIMI?
+            const isTimeout = new Date().getTime() > DEADLINE;
 
             entries.forEach(item => {
                 const scoreObj = leaderboardData.find(l => String(l.id) === String(item.entryid));
@@ -286,7 +285,6 @@
                 const hasPbiLink = item.pbilink && item.pbilink.trim() !== '';
                 const liveBtn = hasPbiLink ? `<button onclick="openExternalLink('${item.pbilink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-blue-600/20 text-blue-400 flex items-center justify-center diamond-shape border-2 border-blue-500 transition hover:scale-110 hover:bg-blue-600/40 shadow-xl" title="Jonli Dashboardni ko'rish">🌐</button>` : '';
 
-                // O'NG TOMON PANEL LOGIKASI
                 let rightPanelContent = '';
                 
                 if (isTimeout) {
@@ -357,9 +355,7 @@
                             
                             <div class="flex gap-2">
                                 ${liveBtn}
-                                ${dlLink ? `
-                                <button onclick="forceDownload('${dlLink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">${iconSvg}</button>
-                                ` : ''}
+                                ${dlLink ? `<button onclick="forceDownload('${dlLink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">${iconSvg}</button>` : ''}
                             </div>
                         </div>
 
@@ -394,43 +390,6 @@
             for(let i=0; i<10; i++) stars[i].classList.toggle('active', i < v);
         }
 
-        const readFile = (file) => new Promise(res => {
-            if(!file) return res(null);
-            const r = new FileReader();
-            r.onload = () => res({ data: r.result, type: file.type, name: file.name });
-            r.readAsDataURL(file);
-        });
-
-        async function uploadEntry() {
-            const btn = document.getElementById('up-btn');
-            const fileEl = document.getElementById('new-img').files[0];
-            const eid = document.getElementById('new-eid').value;
-            const title = document.getElementById('new-title').value;
-            const ownerId = document.getElementById('new-owner').value;
-
-            if(!fileEl || !eid || !title) return alert("Majburiy: ID, Nomi va Asosiy Rasm!");
-
-            btn.innerText = "⏳ YUKLANMOQDA..."; btn.disabled = true;
-            try {
-                const payload = {
-                    action: 'upload', category: document.getElementById('new-cat').value, entryId: eid, 
-                    title: title, description: document.getElementById('new-desc').value, 
-                    pbiLink: document.getElementById('new-pbi').value, ownerId: ownerId 
-                };
-
-                const mainImg = await readFile(fileEl); payload.file = mainImg.data; payload.fileType = mainImg.type; payload.fileName = mainImg.name;
-                
-                const ex1 = await readFile(document.getElementById('new-ex1').files[0]); if(ex1) { payload.ex1 = ex1.data; payload.ex1Type = ex1.type; payload.ex1Name = ex1.name; }
-                const ex2 = await readFile(document.getElementById('new-ex2').files[0]); if(ex2) { payload.ex2 = ex2.data; payload.ex2Type = ex2.type; payload.ex2Name = ex2.name; }
-                const ex3 = await readFile(document.getElementById('new-ex3').files[0]); if(ex3) { payload.ex3 = ex3.data; payload.ex3Type = ex3.type; payload.ex3Name = ex3.name; }
-                const ex4 = await readFile(document.getElementById('new-ex4').files[0]); if(ex4) { payload.ex4 = ex4.data; payload.ex4Type = ex4.type; payload.ex4Name = ex4.name; }
-                const excel = await readFile(document.getElementById('new-excel').files[0]); if(excel) { payload.excel = excel.data; payload.excelType = excel.type; payload.excelName = excel.name; }
-
-                await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(payload) });
-                alert("Muvaffaqiyatli!"); location.reload();
-            } catch (err) { alert("Xato!"); btn.innerText = "PUBLISH"; btn.disabled = false; }
-        }
-
         async function submitVote(id, cat) {
             if(!userId) return alert("Iltimos, bot orqali kiring!");
             
@@ -438,10 +397,7 @@
             const advice = document.getElementById(`advice-${id}`).value.trim();
             
             if(q1==0||q2==0||q3==0 || (cat==='PowerBI' && q4==0)) return alert("Barcha yulduzchalarga baho bering!");
-            
             if(advice.length < 20) return alert(`Izoh juda qisqa! Kamida 20 ta belgi yozing. (Hozir: ${advice.length} ta)`);
-
-            // VAQT TEKSHIRUVI (Frontend)
             if(new Date().getTime() > DEADLINE) return alert("Kechirasiz, ovoz berish vaqti tugagan!");
 
             if(confirm(`ID #${id} ga bergan ovozingizni tasdiqlaysizmi?`)) {
@@ -450,6 +406,7 @@
                 
                 if (result.status === 'timeout') alert("Kechirasiz, ovoz berish vaqti tugagan!");
                 else if (result.status === 'not_whitelisted') alert("Siz ovoz berish huquqiga ega emassiz (Oq ro'yxatda yo'qsiz).");
+                else if (result.status === 'own_dashboard') alert("Siz o'z ishingizga ovoz bera olmaysiz!");
                 else if (result.status === 'duplicate') alert("Siz ushbu dashboardga allaqachon ovoz bergansiz!");
                 else { alert("Rahmat! Ovozingiz qabul qilindi."); location.reload(); }
             }
