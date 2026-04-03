@@ -96,8 +96,9 @@
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzlZ1lCQ7sGMOIlytpZ78MfnBLh1Uq3ksJSuoZ6tmJJsyIvxkXq_8vpBLNoLQcsTajM/exec'; // 👈 URL SHU YERGA
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzlZ1lCQ7sGMOIlytpZ78MfnBLh1Uq3ksJSuoZ6tmJJsyIvxkXq_8vpBLNoLQcsTajM/exec'; // 👈 SHU YERNI YANGILASHNI UNUTMANG
         
+        // 🚨 DEADLINE SOZLAMASI (04-Aprel, 2026 yil soat 18:00 O'zbekiston vaqti)
         const DEADLINE = new Date('2026-04-04T18:00:00+05:00').getTime();
         
         const tg = window.Telegram.WebApp;
@@ -233,6 +234,7 @@
             const catEntryIds = allEntries.filter(e => e.category === cat).map(e => String(e.entryid));
             const catLeaderboard = leaderboardData.filter(l => catEntryIds.includes(String(l.id))).sort((a,b) => b.avg - a.avg);
 
+            // UNDEFINED FIX qismi: ${entryData ? entryData.title : 'Nomsiz'} qo'llanildi
             container.innerHTML = catLeaderboard.map((s, index) => {
                 const entryData = allEntries.find(e => String(e.entryid) === String(s.id));
                 const qScores = cat === 'PowerBI' ? `(${s.q1}, ${s.q2}, ${s.q3}, ${s.q4})` : `(${s.q1}, ${s.q2}, ${s.q3})`;
@@ -243,7 +245,7 @@
                     <span class="text-xl text-blue-400 font-black">#${index+1}</span>
                     <img src="${entryData ? entryData.fileurl : ''}" class="w-16 h-12 object-cover rounded-lg border border-slate-600 bg-slate-900" loading="lazy">
                     <div class="flex-1 min-w-0">
-                        <div class="text-sm font-bold text-white truncate">${s.id} - ${s.title}</div>
+                        <div class="text-sm font-bold text-white truncate">${s.id} - ${entryData ? entryData.title : 'Nomsiz'}</div>
                         <div class="flex items-center gap-1 mt-0.5 text-sm tracking-widest">${getStarsHtml(s.avg)}</div>
                         <div class="text-[10px] text-slate-400 font-mono mt-0.5">${s.avg}/10 &nbsp; ${qScores} &nbsp; • &nbsp; ${s.count} ta ovoz</div>
                     </div>
