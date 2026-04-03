@@ -15,7 +15,6 @@
         html { scroll-behavior: smooth; }
         .custom-scroll::-webkit-scrollbar { height: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        
         #lightbox { transition: opacity 0.3s ease; }
         #lightbox.hidden { opacity: 0; pointer-events: none; }
         #lightbox:not(.hidden) { opacity: 1; pointer-events: auto; }
@@ -33,6 +32,7 @@
             <div class="text-center space-y-4">
                 <h2 class="text-4xl md:text-5xl font-black text-white">Dashboard Challenge <span class="text-blue-500">2026</span></h2>
                 <p id="loading-indicator" class="text-blue-400 font-bold animate-pulse tracking-widest text-sm pt-4">Ma'lumotlar serverga ulanmoqda... ⏳</p>
+                <div id="deadline-timer" class="text-xs font-mono text-red-400 uppercase tracking-widest font-bold hidden">⏳ Ovoz berish 04.04.2026 soat 18:00 gacha</div>
                 <div class="flex flex-wrap justify-center gap-6 pt-6">
                     <button onclick="showGallery('Excel')" class="w-full md:w-64 bg-green-600/10 border border-green-500/20 p-10 rounded-[3rem] hover:scale-105 transition">
                         <div class="text-5xl mb-4">📊</div><div class="font-bold text-xl text-green-400">EXCEL</div>
@@ -54,8 +54,10 @@
                 </div>
                 <input type="text" id="new-title" placeholder="Loyiha nomi / Talaba Ismi" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none">
                 <textarea id="new-desc" placeholder="Loyiha tavsifi..." class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none h-20"></textarea>
-                <input type="url" id="new-pbi" placeholder="Power BI Public Link (ixtiyoriy)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
-                
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="url" id="new-pbi" placeholder="Power BI Public Link (ixtiyoriy)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm">
+                    <input type="number" id="new-owner" placeholder="Egasi Telegram ID'si (Owner ID)" class="w-full bg-slate-900 p-3 rounded-2xl border border-slate-700 outline-none text-sm border-amber-500/50">
+                </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1"><label class="text-[10px] text-slate-500">MAIN PHOTO*</label><input type="file" id="new-img" accept="image/*" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
                     <div class="space-y-1"><label class="text-[10px] text-slate-500">EXCEL FILE</label><input type="file" id="new-excel" class="text-xs bg-slate-900 p-2 rounded-2xl w-full border border-slate-700"></div>
@@ -94,12 +96,14 @@
 
     <script>
         const ADMIN_ID = 8408175512; 
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzCXL8Uke_T9OuJhAvKLeX25uI8Kb8Zk6pCWzsz5-rtfb_jLModz9RQrU6dtMXP-E5T/exec'; // 👈 URL SHU YERGA
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyRAKzNGYksNo27eYzMvtRLbt-C4MdpEkB-2yP5PWYzIYalqnHAwMJ-8vnZqofCih2M/exec'; // 👈 URL SHU YERGA
+        
+        // 🚨 DEADLINE SOZLAMASI (4-Aprel, 2026 yil soat 18:00 O'zbekiston vaqti)
+        const DEADLINE = new Date('2026-04-04T18:00:00+05:00').getTime();
         
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // FOYDALANUVCHI ISMI VA ID SINI OLISH
         let userId = null;
         let userName = 'Foydalanuvchi';
         
@@ -128,6 +132,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             if(userId) document.getElementById('user-display').innerText = `${userName} (${userId})`;
             if(parseInt(userId) === ADMIN_ID) document.getElementById('admin-panel').classList.remove('hidden');
+            
+            const isTimeout = new Date().getTime() > DEADLINE;
+            if(!isTimeout) document.getElementById('deadline-timer').classList.remove('hidden');
+            
             fetchData();
         });
 
@@ -177,11 +185,8 @@
 
         function openExternalLink(url) {
             if (!url) return;
-            if (window.Telegram && window.Telegram.WebApp && tg.initDataUnsafe.user) {
-                tg.openLink(url);
-            } else {
-                window.open(url, '_blank');
-            }
+            if (window.Telegram && window.Telegram.WebApp && tg.initDataUnsafe.user) tg.openLink(url);
+            else window.open(url, '_blank');
         }
 
         function forceDownload(url) {
@@ -191,58 +196,19 @@
                 const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
                 if (match) dlUrl = `https://drive.google.com/uc?export=download&id=${match[1]}`;
             }
-            const a = document.createElement('a');
-            a.href = dlUrl;
-            a.target = '_blank';
-            a.download = '';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            const a = document.createElement('a'); a.href = dlUrl; a.target = '_blank'; a.download = '';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
-        function openLightbox(eid) {
-            activeLightboxEid = eid;
-            updateLightboxImage();
-            document.getElementById('lightbox').classList.remove('hidden');
-        }
-        function closeLightbox() {
-            document.getElementById('lightbox').classList.add('hidden');
-            activeLightboxEid = null;
-            document.getElementById('lightbox-img').src = '';
-        }
-        function updateLightboxImage() {
-            if (!activeLightboxEid) return;
-            const images = window.entryImages[activeLightboxEid];
-            const idx = window.currentSlide[activeLightboxEid];
-            document.getElementById('lightbox-img').src = images[idx];
-        }
-        function prevLightboxSlide() {
-            if (!activeLightboxEid) return;
-            prevSlide(activeLightboxEid);
-            updateLightboxImage();
-        }
-        function nextLightboxSlide() {
-            if (!activeLightboxEid) return;
-            nextSlide(activeLightboxEid);
-            updateLightboxImage();
-        }
+        function openLightbox(eid) { activeLightboxEid = eid; updateLightboxImage(); document.getElementById('lightbox').classList.remove('hidden'); }
+        function closeLightbox() { document.getElementById('lightbox').classList.add('hidden'); activeLightboxEid = null; document.getElementById('lightbox-img').src = ''; }
+        function updateLightboxImage() { if (!activeLightboxEid) return; document.getElementById('lightbox-img').src = window.entryImages[activeLightboxEid][window.currentSlide[activeLightboxEid]]; }
+        function prevLightboxSlide() { if (!activeLightboxEid) return; prevSlide(activeLightboxEid); updateLightboxImage(); }
+        function nextLightboxSlide() { if (!activeLightboxEid) return; nextSlide(activeLightboxEid); updateLightboxImage(); }
 
-        function updateSlide(eid) {
-            const imgElement = document.getElementById(`main-img-${eid}`);
-            const images = window.entryImages[eid];
-            const currentIndex = window.currentSlide[eid];
-            imgElement.src = images[currentIndex];
-        }
-        function prevSlide(eid) {
-            const images = window.entryImages[eid];
-            window.currentSlide[eid] = (window.currentSlide[eid] - 1 + images.length) % images.length;
-            updateSlide(eid);
-        }
-        function nextSlide(eid) {
-            const images = window.entryImages[eid];
-            window.currentSlide[eid] = (window.currentSlide[eid] + 1) % images.length;
-            updateSlide(eid);
-        }
+        function updateSlide(eid) { document.getElementById(`main-img-${eid}`).src = window.entryImages[eid][window.currentSlide[eid]]; }
+        function prevSlide(eid) { window.currentSlide[eid] = (window.currentSlide[eid] - 1 + window.entryImages[eid].length) % window.entryImages[eid].length; updateSlide(eid); }
+        function nextSlide(eid) { window.currentSlide[eid] = (window.currentSlide[eid] + 1) % window.entryImages[eid].length; updateSlide(eid); }
 
         function showGallery(cat) {
             if(!isDataLoaded) return alert("Iltimos, ma'lumotlar yuklanishini kuting!");
@@ -266,20 +232,17 @@
         function renderLeaderboard(cat) {
             const container = document.getElementById('leaderboard-content');
             const catEntryIds = allEntries.filter(e => e.category === cat).map(e => String(e.entryid));
-            const catLeaderboard = leaderboardData
-                .filter(l => catEntryIds.includes(String(l.id)))
-                .sort((a,b) => b.avg - a.avg);
+            const catLeaderboard = leaderboardData.filter(l => catEntryIds.includes(String(l.id))).sort((a,b) => b.avg - a.avg);
 
             container.innerHTML = catLeaderboard.map((s, index) => {
                 const entryData = allEntries.find(e => String(e.entryid) === String(s.id));
-                const img = entryData ? entryData.fileurl : '';
                 const qScores = cat === 'PowerBI' ? `(${s.q1}, ${s.q2}, ${s.q3}, ${s.q4})` : `(${s.q1}, ${s.q2}, ${s.q3})`;
 
                 return `
                 <div onclick="document.getElementById('dash-${s.id}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
                      class="flex items-center gap-4 bg-slate-800 hover:bg-slate-700 transition px-5 py-3 rounded-2xl border border-slate-700 cursor-pointer min-w-[320px] max-w-md">
                     <span class="text-xl text-blue-400 font-black">#${index+1}</span>
-                    <img src="${img}" class="w-16 h-12 object-cover rounded-lg border border-slate-600 bg-slate-900" loading="lazy">
+                    <img src="${entryData ? entryData.fileurl : ''}" class="w-16 h-12 object-cover rounded-lg border border-slate-600 bg-slate-900" loading="lazy">
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-bold text-white truncate">${s.id} - ${s.title}</div>
                         <div class="flex items-center gap-1 mt-0.5 text-sm tracking-widest">${getStarsHtml(s.avg)}</div>
@@ -293,6 +256,8 @@
             const container = document.getElementById('gallery-container');
             container.innerHTML = entries.length ? '' : '<p class="text-center text-slate-500 py-10">Hozircha dashbordlar yo\'q.</p>';
             
+            const isTimeout = new Date().getTime() > DEADLINE; // VAQT TUGADIMI?
+
             entries.forEach(item => {
                 const scoreObj = leaderboardData.find(l => String(l.id) === String(item.entryid));
                 const avgScore = scoreObj ? parseFloat(scoreObj.avg) : 0;
@@ -300,6 +265,7 @@
                 
                 const myVote = myVotes.find(v => String(v.entryId) === String(item.entryid));
                 const isVoted = !!myVote;
+                const isOwner = item.ownerid && String(item.ownerid).trim() === String(userId).trim();
 
                 const images = [item.fileurl, item.extra1, item.extra2, item.extra3, item.extra4].filter(Boolean);
                 window.entryImages[item.entryid] = images;
@@ -317,52 +283,34 @@
                     dlLink = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 }
                 const iconSvg = cat === 'Excel' ? excelIcon : pbiIcon;
-                
-                // POWER BI JONLI LINK TUGMASI UCHUN LOGIKA
                 const hasPbiLink = item.pbilink && item.pbilink.trim() !== '';
-                const liveBtn = hasPbiLink ? `
-                    <button onclick="openExternalLink('${item.pbilink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-blue-600/20 text-blue-400 flex items-center justify-center diamond-shape border-2 border-blue-500 transition hover:scale-110 hover:bg-blue-600/40 shadow-xl" title="Jonli Dashboardni ko'rish">
-                        🌐
-                    </button>
-                ` : '';
+                const liveBtn = hasPbiLink ? `<button onclick="openExternalLink('${item.pbilink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-blue-600/20 text-blue-400 flex items-center justify-center diamond-shape border-2 border-blue-500 transition hover:scale-110 hover:bg-blue-600/40 shadow-xl" title="Jonli Dashboardni ko'rish">🌐</button>` : '';
 
-                container.innerHTML += `
-                <div id="dash-${item.entryid}" class="grid grid-cols-1 xl:grid-cols-12 gap-8 bg-slate-900/40 p-6 md:p-10 rounded-[3rem] border border-slate-800 shadow-2xl relative ${isVoted ? 'border-emerald-500/50 bg-emerald-900/10' : ''}">
-                    
-                    <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col">
-                        
-                        <div class="relative w-full h-[300px] md:h-[450px] bg-slate-800 rounded-[2rem] overflow-hidden border border-slate-700 group flex items-center justify-center shadow-lg">
-                            <img id="main-img-${item.entryid}" src="${images[0]}" class="max-w-full max-h-full object-contain cursor-zoom-in transition duration-300 hover:scale-[1.02]" onclick="openLightbox('${item.entryid}')" loading="lazy">
-                            ${sliderControls}
-                        </div>
-
-                        <div class="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-slate-800 pt-6 gap-4">
-                            <div class="min-w-0">
-                                <div class="inline-block ${isVoted ? 'bg-emerald-600' : 'bg-blue-600'} text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryid}</div>
-                                <h3 class="text-3xl font-black text-white italic leading-tight break-words">${item.title || 'Nomsiz Dashboard'}</h3>
-                                <div class="flex items-center gap-2 mt-3 text-2xl tracking-widest flex-wrap">
-                                    ${getStarsHtml(avgScore)} 
-                                    <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10 O'rtacha &nbsp;•&nbsp; ${voteCount} ta ovoz</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex gap-2">
-                                ${liveBtn}
-                                ${dlLink ? `
-                                <button onclick="forceDownload('${dlLink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">
-                                    ${iconSvg}
-                                </button>
-                                ` : ''}
+                // O'NG TOMON PANEL LOGIKASI
+                let rightPanelContent = '';
+                
+                if (isTimeout) {
+                    rightPanelContent = `
+                        <div class="flex flex-col items-center justify-center h-full space-y-6 text-center">
+                            <div class="text-6xl opacity-80">🏁</div>
+                            <div>
+                                <h3 class="text-2xl font-black text-red-400 uppercase tracking-widest">OVOZ BERISH YAKUNLANGAN</h3>
+                                <p class="text-slate-400 mt-2">Musobaqa o'z nihoyasiga yetdi. Barchaga ishtirok uchun rahmat!</p>
                             </div>
                         </div>
-
-                        <div class="bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 mt-4 grow">
-                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">TAVSIF</h4>
-                            <p class="text-sm md:text-base text-slate-300 leading-relaxed break-words whitespace-pre-wrap">${item.description || 'Tavsif berilmagan.'}</p>
+                    `;
+                } else if (isOwner) {
+                    rightPanelContent = `
+                        <div class="flex flex-col items-center justify-center h-full space-y-6 text-center">
+                            <div class="text-6xl opacity-80">🛡️</div>
+                            <div>
+                                <h3 class="text-2xl font-black text-blue-400 uppercase tracking-widest">Bu sizning ishingiz!</h3>
+                                <p class="text-slate-400 mt-2">O'zingizning dashbordingizga ovoz bera olmaysiz. Raqobatchilarning ishini xolis baholang.</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col justify-center bg-slate-800/20 p-6 md:p-8 rounded-[2rem] border border-slate-700/50">
+                    `;
+                } else {
+                    rightPanelContent = `
                         <h4 class="text-sm font-bold ${isVoted ? 'text-emerald-400' : 'text-blue-400'} uppercase tracking-widest mb-2 border-b border-slate-700 pb-3">
                             ${isVoted ? '✅ SIZNING OVOZINGIZ' : 'Ovoz Berish Paneli'}
                         </h4>
@@ -375,8 +323,8 @@
                         </div>
 
                         <div class="space-y-2 mt-6">
-                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">IZOH (IXTIYORIY)</h4>
-                            <textarea id="advice-${item.entryid}" class="w-full ${isVoted ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-900 text-slate-200'} border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-blue-500 transition resize-none" placeholder="O'z maslahatingizni yozing..." ${isVoted ? 'readonly' : ''}>${myVote ? (myVote.advice || '') : ''}</textarea>
+                            <h4 class="text-[10px] font-bold text-amber-500 uppercase tracking-widest px-2">IZOH (MAJBURIY, MIN 20 TA BELGI)</h4>
+                            <textarea id="advice-${item.entryid}" class="w-full ${isVoted ? 'bg-slate-800/40 text-slate-400' : 'bg-slate-900 text-slate-200'} border border-slate-700 p-4 rounded-3xl outline-none text-sm h-24 focus:border-amber-500 transition resize-none" placeholder="Ishtirokchiga maslahat va fikrlaringizni yozing..." ${isVoted ? 'readonly' : ''}>${myVote ? (myVote.advice || '') : ''}</textarea>
                         </div>
 
                         ${!isVoted ? 
@@ -384,6 +332,45 @@
                             : 
                             `<div class="w-full bg-emerald-600/20 text-emerald-500 py-5 rounded-[2rem] font-black text-center text-lg mt-4 border border-emerald-500/30 cursor-not-allowed tracking-wider">OVOZ BERILGAN</div>`
                         }
+                    `;
+                }
+
+                const styleBorder = isTimeout ? 'border-red-900/50 bg-red-900/5' : isVoted ? 'border-emerald-500/50 bg-emerald-900/10' : isOwner ? 'border-blue-500/30 bg-blue-900/5' : 'border-slate-800 bg-slate-900/40';
+
+                container.innerHTML += `
+                <div id="dash-${item.entryid}" class="grid grid-cols-1 xl:grid-cols-12 gap-8 p-6 md:p-10 rounded-[3rem] border shadow-2xl relative ${styleBorder}">
+                    <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col">
+                        <div class="relative w-full h-[300px] md:h-[450px] bg-slate-800 rounded-[2rem] overflow-hidden border border-slate-700 group flex items-center justify-center shadow-lg">
+                            <img id="main-img-${item.entryid}" src="${images[0]}" class="max-w-full max-h-full object-contain cursor-zoom-in transition duration-300 hover:scale-[1.02]" onclick="openLightbox('${item.entryid}')" loading="lazy">
+                            ${sliderControls}
+                        </div>
+
+                        <div class="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-slate-800 pt-6 gap-4">
+                            <div class="min-w-0">
+                                <div class="inline-block ${isTimeout ? 'bg-red-600' : isVoted ? 'bg-emerald-600' : isOwner ? 'bg-amber-600' : 'bg-blue-600'} text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-widest">${item.entryid}</div>
+                                <h3 class="text-3xl font-black text-white italic leading-tight break-words">${item.title || 'Nomsiz Dashboard'}</h3>
+                                <div class="flex items-center gap-2 mt-3 text-2xl tracking-widest flex-wrap">
+                                    ${getStarsHtml(avgScore)} 
+                                    <span class="text-xs text-slate-400 font-bold ml-2 font-mono whitespace-nowrap">${avgScore.toFixed(1)}/10 O'rtacha &nbsp;•&nbsp; ${voteCount} ta ovoz</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                ${liveBtn}
+                                ${dlLink ? `
+                                <button onclick="forceDownload('${dlLink}')" class="shrink-0 w-16 h-16 md:w-20 md:h-20 bg-slate-800 flex items-center justify-center diamond-shape border-2 border-slate-600 transition hover:scale-110 hover:border-${cat === 'Excel' ? 'emerald' : 'yellow'}-500 hover:bg-slate-700 shadow-xl" title="Faylni yuklab olish">${iconSvg}</button>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/40 p-6 rounded-3xl border border-slate-700/50 mt-4 grow">
+                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">TAVSIF</h4>
+                            <p class="text-sm md:text-base text-slate-300 leading-relaxed break-words whitespace-pre-wrap">${item.description || 'Tavsif berilmagan.'}</p>
+                        </div>
+                    </div>
+
+                    <div class="xl:col-span-6 space-y-6 min-w-0 flex flex-col justify-center bg-slate-800/20 p-6 md:p-8 rounded-[2rem] border border-slate-700/50">
+                        ${rightPanelContent}
                     </div>
                 </div>`;
             });
@@ -419,6 +406,7 @@
             const fileEl = document.getElementById('new-img').files[0];
             const eid = document.getElementById('new-eid').value;
             const title = document.getElementById('new-title').value;
+            const ownerId = document.getElementById('new-owner').value;
 
             if(!fileEl || !eid || !title) return alert("Majburiy: ID, Nomi va Asosiy Rasm!");
 
@@ -426,7 +414,8 @@
             try {
                 const payload = {
                     action: 'upload', category: document.getElementById('new-cat').value, entryId: eid, 
-                    title: title, description: document.getElementById('new-desc').value, pbiLink: document.getElementById('new-pbi').value, 
+                    title: title, description: document.getElementById('new-desc').value, 
+                    pbiLink: document.getElementById('new-pbi').value, ownerId: ownerId 
                 };
 
                 const mainImg = await readFile(fileEl); payload.file = mainImg.data; payload.fileType = mainImg.type; payload.fileName = mainImg.name;
@@ -444,23 +433,25 @@
 
         async function submitVote(id, cat) {
             if(!userId) return alert("Iltimos, bot orqali kiring!");
+            
             const q1=document.getElementById(`val-${id}-q1`).value, q2=document.getElementById(`val-${id}-q2`).value, q3=document.getElementById(`val-${id}-q3`).value, q4=cat==='PowerBI'?document.getElementById(`val-${id}-q4`).value:0;
-            const advice = document.getElementById(`advice-${id}`).value;
+            const advice = document.getElementById(`advice-${id}`).value.trim();
             
             if(q1==0||q2==0||q3==0 || (cat==='PowerBI' && q4==0)) return alert("Barcha yulduzchalarga baho bering!");
+            
+            if(advice.length < 20) return alert(`Izoh juda qisqa! Kamida 20 ta belgi yozing. (Hozir: ${advice.length} ta)`);
+
+            // VAQT TEKSHIRUVI (Frontend)
+            if(new Date().getTime() > DEADLINE) return alert("Kechirasiz, ovoz berish vaqti tugagan!");
 
             if(confirm(`ID #${id} ga bergan ovozingizni tasdiqlaysizmi?`)) {
                 const res = await fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify({action:'vote', voterId:userId, voterName:userName, entryId:id, q1, q2, q3, q4, advice, category:cat}) });
                 const result = await res.json();
                 
-                if (result.status === 'not_whitelisted') {
-                    alert("Kechirasiz! Siz ovoz berish huquqiga ega emassiz (Oq ro'yxatda yo'qsiz).");
-                } else if (result.status === 'duplicate') {
-                    alert("Siz ushbu dashboardga allaqachon ovoz bergansiz!");
-                } else {
-                    alert("Rahmat! Ovozingiz qabul qilindi.");
-                    location.reload();
-                }
+                if (result.status === 'timeout') alert("Kechirasiz, ovoz berish vaqti tugagan!");
+                else if (result.status === 'not_whitelisted') alert("Siz ovoz berish huquqiga ega emassiz (Oq ro'yxatda yo'qsiz).");
+                else if (result.status === 'duplicate') alert("Siz ushbu dashboardga allaqachon ovoz bergansiz!");
+                else { alert("Rahmat! Ovozingiz qabul qilindi."); location.reload(); }
             }
         }
     </script>
